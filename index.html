@@ -40621,11 +40621,26 @@
     function drawLegend() {
       legend.html("");
 
+      const bio = legend.append("div")
+      bio.append("div")
+          .html("<strong>About this Visualization:</strong>")
+          .style("font-weight", "600")
+          .style("margin-bottom", "5px")
+          .style("margin-top", "55px")
+          .style("color", "#eee")
+          .style("font-size", "17px");
+      
+      bio.append("div")
+          .html("This visualation simulates UK #1 album artists from 1956 to 2025. <br/>Nodes represent artists, coloured by genre, sized by the number<br/>of weeks they've charted and shaped by their number of #1<br/>albums.")
+          .style("font-weight", "400")
+          .style("margin-bottom", "10px")
+          .style("color", "#ccc")
+          .style("font-size", "12px");
+
       const controlLegend = legend.append("div");
       controlLegend.append("div")
           .html("Node Controls:")
           .style("font-weight", "600")
-          .style("margin-top", "55px")
           .style("margin-bottom", "2px")
           .style("color", "#eee")
           .style("font-size", "17px");
@@ -40834,6 +40849,7 @@
   </script>
 </body>
 </html>
+
 
 
 

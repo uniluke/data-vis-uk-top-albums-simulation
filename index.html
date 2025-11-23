@@ -168,7 +168,7 @@
     width: fit-content;
   }#legend {
     padding-top: 100px;
-    height: calc(100%);
+    height: calc(59%);
 
     top: 12px;
     position: fixed;
@@ -40170,8 +40170,6 @@
     simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(d => d.id).distance(150).strength(0.05))
         .force("charge", d3.forceManyBody().strength(d => -1200 - d.totalWeeks * 25))
-        .force("collision", d3.forceCollide().strength(d => 0.001 * d.totalWeeks))
-        .force("center", d3.forceCenter(width / 2, height / 2))
         .force("pullCenter", d3.forceRadial(0, width / 2, height / 2).strength(d => 0.07 + ((d.year - 1956) * 0.007)))
         .force("genreLink", d3.forceLink().id(d => d.id).distance(450).strength(d => 0.03 * d.weight))
         .on("tick", () => {
@@ -40213,7 +40211,7 @@
           return d3.symbolCircle;
         }
 
-        const sides = Math.min(albumCount + 1, 10);
+        const sides = Math.min(albumCount + 1, 6);
 
         return {
           draw(context, size) {
@@ -40423,6 +40421,7 @@
         simulation.nodes(nodes);
         simulation.force("link").links(links);
         simulation.force("genreLink").links(genreLinks);
+        
         simulation.alphaTarget(0.3).restart();
     }
 
@@ -40567,7 +40566,8 @@
 
       nodes = Array.from(artistsMap.values()).map(a => {
         if (a.x === undefined || a.y === undefined) {
-          a.x = width / 2; a.y = height / 2;
+          a.x = width / 2 + (Math.random() - 0.5) * 200; 
+          a.y = height / 2 + (Math.random() - 0.5) * 200;
         }
         return a;
       });
@@ -40642,12 +40642,7 @@
           { label: "2 #1 Albums",    symbol: polygonSymbol(3) }, 
           { label: "3 #1 Albums",    symbol: polygonSymbol(4) }, 
           { label: "4 #1 Albums",    symbol: polygonSymbol(5) }, 
-          { label: "5 #1 Albums",   symbol: polygonSymbol(6) },  
-          { label: "6 #1 Albums",  symbol: polygonSymbol(7) },
-          { label: "7 #1 Albums", symbol: polygonSymbol(8) },   
-          { label: "8 #1 Albums", symbol: polygonSymbol(9) },   
-          { label: "9 #1 Albums",   symbol: polygonSymbol(10) }, 
-          { label: "10+ #1 Albums", symbol: polygonSymbol(11) }  
+          { label: "5+ #1 Albums",   symbol: polygonSymbol(6) }
       ];
 
       const shapeLegend = legend.append("div");
@@ -40777,13 +40772,25 @@
           }
         }, 1500);
       } else {
-        playing = previouslyPlaying;
-        playPauseBtn.text("Pause");
+        playing = true;
+        if (previouslyPlaying) {
+          playPauseBtn.text("Pause");
+        }
         setTimeout(() => {
           if (playing && !timer) {
-            timer = setInterval(advanceWeek, 200 - speed);
+            timer = setInterval(advanceWeek, 30);
           }
-        }, 1000);
+        }, 1500);
+        setTimeout(() => {
+          if (!previouslyPlaying) {
+            playing = false;
+            playPauseBtn.text("Play");
+            if (timer) {
+              clearInterval(timer);
+              timer = null;
+            }
+          }
+        }, 1500);
       }
     });
 

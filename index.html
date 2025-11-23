@@ -40621,6 +40621,38 @@
     function drawLegend() {
       legend.html("");
 
+      const controlLegend = legend.append("div");
+      controlLegend.append("div")
+          .html("Node Controls:")
+          .style("font-weight", "600")
+          .style("margin-top", "55px")
+          .style("margin-bottom", "2px")
+          .style("color", "#eee")
+          .style("font-size", "17px");
+
+          
+      controlLegend.append("div")
+          .html("&#8226 Hover over nodes for details.<br/>&#8226 Click nodes to focus them.<br/>&#8226 Click background to reset view.")
+          .style("font-weight", "400")
+          .style("margin-bottom", "10px")
+          .style("color", "#ccc")
+          .style("font-size", "12px");
+        
+      viewportControlLegend = legend.append("div").style("margin-top", "0px");
+      viewportControlLegend.append("div")
+          .html("Viewport Controls:")
+          .style("font-weight", "600")
+          .style("margin-bottom", "2px")
+          .style("color", "#eee")
+          .style("font-size", "17px"); 
+        
+      viewportControlLegend.append("div")
+          .html("&#8226 Scroll to zoom in/out.<br/>&#8226 Click and drag to pan around.")
+          .style("font-weight", "400")
+          .style("margin-bottom", "10px")
+          .style("color", "#ccc")
+          .style("font-size", "12px");
+
       function polygonSymbol(sides) {
           return {
               draw(context, size) {
@@ -40802,5 +40834,6 @@
   </script>
 </body>
 </html>
+
 
 

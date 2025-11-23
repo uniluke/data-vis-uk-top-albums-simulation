@@ -40794,16 +40794,6 @@
       }
     });
 
-
-    window.addEventListener("resize", () => {
-        width = window.innerWidth;
-        height = window.innerHeight - document.getElementById('controls').offsetHeight - 50;
-        svg.attr("width", width).attr("height", height);
-        simulation.force("center", d3.forceCenter(width / 2, height / 2));
-        simulation.force("pullCenter", d3.forceRadial(0, width / 2, height / 2).strength(0.05));
-        simulation.alpha(1).restart();
-    });
-
     artistsMap = new Map();
     albumsMap = new Map();
     drawLegend();
@@ -40812,4 +40802,5 @@
   </script>
 </body>
 </html>
+
 

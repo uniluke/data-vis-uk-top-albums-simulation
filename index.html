@@ -168,7 +168,7 @@
     width: fit-content;
   }#legend {
     padding-top: 100px;
-    height: fit-content;
+    height: calc(100%);
 
     top: 12px;
     position: fixed;
@@ -40737,8 +40737,13 @@
           .style("color", "#eee")
           .style("font-size", "17px");
 
+      const colorGrid = colorLegend.append("div")
+          .style("display", "grid")
+          .style("grid-template-columns", "1fr 1fr")
+          .style("column-gap", "10px");
+
       Object.keys(colourDict).forEach(genre => {
-          const item = colorLegend.append("div").attr("class", "legend-item");
+          const item = colorGrid.append("div").attr("class", "legend-item");
 
           item.append("svg")
               .attr("class", "legend-symbol")
@@ -40849,6 +40854,7 @@
   </script>
 </body>
 </html>
+
 
 
 

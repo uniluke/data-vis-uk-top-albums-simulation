@@ -1,19 +1,58 @@
 <!DOCTYPE html>
 <meta charset="utf-8" />
 <header>
-  <title>UK #1 Albums Visualisation Simulation</title>
+  <title>UK #1 Albums Network Simulation</title>
 </header>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
   html, body {
-    margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;
+    margin: 0; padding: 0;
     font-family: 'Inter', sans-serif;
-    background: #eee;
-    color: #eee;
+    background: #fff;
+    color: #111;
+    font-size: 17px;
   }
-  body {
+  h1 { font-size: 40px; margin-bottom: 6px; }
+  h2 { font-size: 30px; margin-bottom: 6px; }
+  .chart-container { 
+      margin: 0 auto 20px auto;
+      background:#444; 
+      color:#d4d4d4;
+      border:1px solid #ddd; 
+      padding:12px; 
+      border-radius:6px; 
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      display: block;
+      width: fit-content;
+  }
+  .tooltip { position: absolute; pointer-events: none; background: rgba(0,0,0,0.8); color: #fff; padding:6px 8px; border-radius:4px; font-size:12px; }
+  .axis-label { font-size: 13px; fill: #d4d4d4; font-weight: 600; }
+  .title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #d4d4d4;
+    fill: white;
+  }
+  .text-section {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 8px;
+  }
+  #viz-container {
+    height: 95vh;
+    width: 90%;
+    margin: 0 auto;
+    overflow: hidden;
+    background: #5d5d5d;
+    color: #eee;
     display: flex; flex-direction: column;
     user-select: none;
+    position: relative;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   }
   #searchInput {
     padding: 8px 12px;
@@ -38,17 +77,16 @@
     border-width: 0 0 2px 0;
   }
   #sidePanel {
-    position: fixed;
-    top: 0px;
+    padding-top: 100px;
+    height: calc(84%);
+    top: 12px;
+    position: absolute;
     right: 0;
     width: 280px;
     color: #eee;
-    margin-bottom: 90px;
-    margin-top: 120px;
-    height: calc(70%);
     background: #444;
     box-shadow: -4px 0 12px rgba(0,0,0,0.1);
-    padding: 20px;
+    padding: 80px 20px;
     font-family: 'Inter', sans-serif;
     overflow-y: auto;
     transform: translateX(100%);
@@ -56,7 +94,7 @@
     pointer-events: auto;
     z-index: 999;
     box-shadow: -4px 0 12px rgba(0,0,0,0.1);
-    border-radius: 20px 0 0 20px;
+    border-radius: 40px 40px 0px 40px;
     border-color: #000;
     border-style: solid;
     border-width: 2px 2px 2px 2px;
@@ -84,19 +122,24 @@
   svg {
     flex-grow: 1;
     cursor: grab;
-    background: #eee;
+    background: #585858;
+  }
+  svg text {
+    user-select: none;
+    -webkit-user-select: none; 
+    -moz-user-select: none;    
+    -ms-user-select: none;     
   }
   .node {
     cursor: pointer;
     stroke: #000;
     stroke-width: 2.5px;
-    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.05));
     transition: fill 0.3s ease;
   }
   .link {
-    stroke: #bbb;
-    stroke-opacity: 0.6;
+    stroke-opacity: 0.9;
     transition: stroke 0.3s ease, stroke-width 0.3s ease, stroke-opacity 0.3s ease;
+    cursor: pointer;
   }
   .highlighted {
     stroke: #ffb300;
@@ -171,12 +214,12 @@
     height: calc(100%);
 
     top: 12px;
-    position: fixed;
+    position: absolute;
     left: 0;
     background: #444;
     padding: 14px 20px;
     border-radius: 0 20px 0 0;
-    width: auto;           
+    width: 420px;           
     max-width: max-content;
     display: flex;
     flex-direction: column;
@@ -196,12 +239,12 @@
     gap: 8px;
     background: #444;
     display: grid;
-    grid-template-columns: 26px auto;
+    grid-template-columns: 13px auto;
     align-items: center;
     column-gap: 10px;
     margin-bottom: 5px;
     white-space: nowrap;
-    min-width: 180px; 
+    min-width: 40px; 
   }
   .legend-item svg {
     flex-shrink: 0;     
@@ -221,14 +264,28 @@
 
 <body>
 
+  <section style="padding: 10px; max-width: 1000px; margin: 0 auto;">
+    <h1>An interactive, force-directed network visualisation of multivariate glyphs, simulating the UK number-one album chart history</h1>
+    <p>Unit Code: UCIL20421, Student Number: 11012731, Word Count: 3103.</p>
+    <h2>Introduction</h2>
+    <p>We all view music in different ways[1], and by extension, its history. I wanted to create a tool that both provided a broad overview of music's evolution, whilst also allowing the viewer to trace and interact with particular aspects they resonate with, discovering details and trends they didn't previously know. <br/>
+<br/>I chose to use the lens of the British album chart as it is a staple institution across the country[2], providing consistent, high-quality reporting of trends for nearly 80 years[3]. Britain also has a very large and diverse music history, frequently setting trends for the rest of the world[4], so this subset should be reasonably representative.<br/>
+<br/>The visualisation (Figure 1) is a simulation of the last 80 years of chart data, in chronological order. Each node represents an artist, appearing when they top the album chart for the first time, growing for every week they are top of the chart, with the number of points their shape has indicating the number of number 1 albums they have had. To further show patterns in listening preferences, each node is coloured in reference to the genre it most closely aligns with and artist nodes are linked by edges if they have collaborated on a song together or share a band member.
+</p>
+    <h2>Figure 1:</h2>
+  </section>
+
+  <div id="viz-container">
   <div id="controls">
     <input type="text" id="searchInput" placeholder="Search artist...">
     <button id="searchBtn">Search</button>
     <button id="playPauseBtn">Play</button>
-    <input type="range" id="speedSlider" min="1" max="200" value="170" style="width:60px;">
+    <input type="range" id="speedSlider" min="1" max="200" value="170" style="width:80px;">
     <span id ="speedLabel">Speed</span>
-    <input type="range" id="timeline" min="0" max="4" step="1" value="0" style="width:600px;"/>
+    <input type="range" id="timeline" min="0" max="4" step="1" value="0" style="width:450px;"/>
     <div id="weekLabel"></div>
+    <label><input type="checkbox" id="showCollabs" checked> Show Collaborations</label>
+    <label><input type="checkbox" id="showSharedMembers" checked> Show Shared Members</label>
     <button id="toggleLegendBtn">Hide Legend</button>
   </div>
 
@@ -236,19 +293,730 @@
     <h2 id="panelTitle" style="margin-top: 0;"></h2>
     <p><strong>Year of Debut:</strong> <span id="panelYear"></span></p>
     <p><strong>Genre:</strong> <span id="panelGenre"></span></p>
-    <p><strong>Number of #1 Albums:</strong> <span id="panelNo1Albums"></span></p>
-    <p><strong>#1 Albums:</strong> <p id="panelAlbums"></p></p>
+    <p><strong>Number of #1 Albums:<br/></strong> <span id="panelNo1Albums"></span></p>
+    <p><strong>#1 Albums:<br/></strong> <p id="panelAlbums"></p></p>
     <p><strong>Total Weeks #1:</strong> <span id="panelTotalWeeks"></span></p>
-    <!-- <p><strong>Collaborations:</strong> <span id="panelCollabs"></span></p> -->
+    <p><strong>Collaborations:<br/></strong> <span id="panelCollabs"></span></p>
+    <p><strong>Shared Members:<br/></strong> <span id="panelSharedMembers"></span></p>
   </div>
 
   <svg></svg>
-  <div class="tooltip"></div>
   <div id="legend"></div>
+  </div> 
+  <div class="tooltip"></div>
 
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <h2>Data Biography</h2>
+    <p>The chart data is collected by Official Charts and published in various formats[5]. They track nearly all types of music consumption to provide by far the best view of music trends in the UK[3], across many areas. It is collected constantly and collated every week, for entertainment[6] and historical record-keeping.<br/>
+<br/>For the more detailed information - genre, song collaborations and shared group members - I used the MusicBrainz database’s API, an online encyclopedia of music information[7]. It is community-maintained, which is the only option really when dealing with data of this breadth, as although this means inconsistencies or missing data can sometimes occur, the benefits far outweigh this[8]. Additionally, genres are inherently vague and subjective[9], so this isn’t too significant.<br/>
+A list of all associated genres is held for each artist, with the best fitting first. To get this into a form that is visually understandable and standardised across my data set, I selected a set of genres that I thought gave a large and varied overview of music tastes while still maintaining readability when interspersed[10], and parsed the returned list, to find a match in my genre list, ignoring specifiers, e.g. indie rock to indie, and translating similar genres, e.g. rap to hip-hop. Obviously, this loses some specificity and hence trend detection, but most smaller genres can be subsumed accurately by larger ones[11]. Another issue is that artists can span genres, and this abstraction takes away the opportunity to visualise that facet. However, for most artists, there is a clear choice[11], so this isn’t too restrictive. Additionally, the visual complexity of having multicoloured nodes or equivalent to represent this would increase the likelihood of overloading the viewer's mental load[12].<br/>
+<br/>To acquire the collaborations between artists, I parsed the credits for every release by an artist, for any other artist also in my set. For shared members, I first checked if the artist was a group, and if so, listed its members and found all groups each had been in (including them as a solo artist) and compared them to my set of chart-topping artists. Some unique releases, namely charity albums where many artists are members or collaborate[13], provide some surprising results here; however, I still display them as they fit the criteria.
+</p>
+  </section>
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <h2>Motivation</h2>
+    <p>One of the main reasons I chose to visualise my data in this way is that it allows many variables to be exhibited simultaneously, without overcrowding the display or mentally overloading the viewer[14]. This is because the nodes themselves have multiple unique attributes, as opposed to a mere point. The large scope of the data presented is managed by the visualisation's interactivity, which allows massive flexibility in viewing style[15] - with movement, zoom and search tools in addition to a side panel displaying more artist data to give extra insights. <br/>
+<br/>These characteristics mean my visualisation can be utilised successfully as an exploratory data tool[16], delving deeper into data than would usually be allowed, to uncover interesting patterns. This aligns with modern EDA principles, which emphasise supporting hypothesis generation and open-ended exploration rather than presenting predefined conclusions[17], which I will explore later in this essay. <br/>
+<br/>The temporal aspect is also the main driving variable here, so I wanted to give that full focus in the form of a simulation, providing greater immersiveness for the viewer than a static axis[18]. Another key motivation for me was to, in parallel, produce something aesthetically pleasing and captivating that could be enjoyed by anyone with an interest in music, separate from any data-analytic mindset[19]. I think this is achieved well via the force-directed nature of the graph, which produces more captivating and fun results[20], responding to the viewer’s and the environment's inputs. This method is also very useful in revealing insights, as with a few simple rules, more complex patterns and ordering can evolve. For example, younger nodes are drawn into the centre more than older ones, to create an approximate timeline of the industry, and nodes of the same genre attract, forming clusters, to provide a general overview of the population's music tastes at that time, which would be hard to gauge otherwise[21].<br/>
+<br/>I used a network because I wanted to additionally explore how the connections between artists have evolved, and what impact that has had on the industry. It also enables an interesting demonstration of the ‘6 degrees of separation’ theory[22], while even within a set this small, over half form a single connected group, joining very unrelated artists through just a few links. I also think it's quite satisfying how this visualisation in some ways mirrors the music industry itself, with new nodes building off the older ones, joining their clusters, and fighting for dominance in the centre.<br/>
+<br/>Some key inspirations were Hans Rosling's "200 Countries, 200 Years"[23] for the overall structure, but with more emphasis on the node’s attributes rather than their position, alongside the "Open Syllabus Galaxy"[24] for its successful method of interactiveness in a large dataset and dynamic labelling.<br/>
+</p>
+  </section>
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <h2>Visualisation Choices</h2>
+    <p>Although there is a lot to take in at first, I've provided the ability to easily pause, slow down and rewind the simulation, alongside a detailed legend to cross-reference with, allowing viewers to comfortably get to grips with the system, without exiting it or missing anything. With this many variables, visual hierarchy is crucial[25], so all nodes are outlined in black to distinguish them[26], and are highlighted and zoomed to when selected[27]. I chose colour to represent genre as I felt this variability required less precise comparison, due to its vague and subjective nature[9], and would allow better facilitation of the perception of larger patterns[28]. As this would then be the main takeaway when using it as a wider overview tool, the colour mapping mattered. After researching, I found a paper that had surveyed a group of people on what colour they associated most with different genres of music[29], many with very universal outcomes. So I used their modal choices when possible, slightly diverting when required, to maintain uniqueness between genres. I also made sure to select hue values that were more pastel and less bright, as combinations between these can be noisy and detract from the data[30]. I placed these over a grey background, following Imhof's third rule[30], to provide a natural base point.<br/>
+<br/>For the other variable, number of chart-topping albums, I didn't want to affect the genre understanding by messing with colour via patterns or changing hue, so I instead chose shape. Again, following a pattern rather than arbitrary selection - which can aid intuition once understood[31] - the number of points on the shape is equal to the number of number-one albums they’ve had. I have, however, capped the number of points at 6, as further resolution limits comparability[28], yet this variable is strongly correlated with size, so this isn't too significant.<br/>
+<br/>Again, steering away from further colour modifications, I made the links strongly monochrome, so they could still stand out well. Towards the end of the simulation, as the number of nodes gets larger and collaborations become much more common, zoomed-out views can appear slightly hairball-like[32], so I added toggles to let the viewer select whether to display each link type or not.<br/>
+</p>
+  </section>
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <h2>Challenges</h2>
+    <p>Acquiring the collaboration and shared member data was quite complex and time-consuming, as it required long-running, error-handling code. Another challenge came from the data set, with all soundtrack entries being classified as from a single artist, which provides large anomalies in the early years. But I have chosen to leave them in, just coloured differently, as they are an interesting part of consumer history[33], and the early stages of the simulation would be empty without them or confusingly fast if skipped past. As I created this visualisation and collated the dataset via writing code, a significant amount of time was spent finding out how to achieve different functions and debugging; however, I think this was worth it for the flexibility it brought[34] in executing my original idea.</p>
+  </section>
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <h2>Analysis & Insights</h2>
+    <p>While exploring my visualisation, the starkest thing presented was the reduction in dominance that massively popular artists have in the modern music scene[35]. While perhaps surprising at first, considering how commanding artists like Taylor Swift seem[36], this feeling is generated from experience either solely in, or biased by, the modern age of music listening[37]. Most people know her name, yet her music only really has cultural significance for a few weeks on a new release or tour[38], whereas an artist like The Beatles shaped the zeitgeist nearly completely for almost a decade[39], and remained prominent for many more[40]. Yet, delving into this, a myriad of reasons appear why this is now the case, all of which coalesce to create an industry where a cultural hijack like Beatlemania[41] could not feasibly happen again[61].<br/>
+<br/>To support my argument, I have created a variety of graphs, using the same data as the simulation, to hone in on specific changes without distractors. These are all simple scatterplots or line graphs, with at most 2 distinct colours over a simple grey background, for maximum clarity and inference speed[12]. I have excluded 2025 as it is not a complete year, and only plotted from 1969 onwards as previous to that, soundtracks charting were not an anomaly, and their differing representation (as mentioned) massively skews the charts - however it is worth noting these early years also support the argument of listener focus, with, for example, the “South Pacific” soundtrack topping the chart for over an entire year in 1959[42]. For the appearances of these in later years, I am excluding them to reduce uncertainty, unless the analysis is strictly album-based, as their titles are still present in the data.<br/>
+<br/>To initially test this, I plotted the average share of a year an artist that tops the chart is on top for (Figure 2), alongside the maximum percentage share per year (Figure 3), as this could otherwise be obscured.
+</p><br/>
+  </section>
+
+  <div id="chart1" class="chart-container"></div><br/>
+  <div id="chart10" class="chart-container"></div><br/>
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <p>With a few outliers, artist dominance clearly trends downwards. Unsurprisingly, being strongly linked, this is mirrored for albums (Figures 4, 5).
+</p><br/>
+  </section>
+  
+  <div id="chart3" class="chart-container"></div><br/>
+  <div id="chart11" class="chart-container"></div><br/>
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <p>The likely driver behind this is that there is simply more music[43]. And because there is a limit of time that people will spend listening to music, depending on what they are doing in their life[44] - which is generally unrelated to how much music exists - this time is now more widely spread. To demonstrate this, the plots below detail how many artists charted for the first time each year (Figure 6), alongside how many artists (Figure 7) and albums (Figure 8) charted in total each year.</p>
+  </section><br/>
+
+  <div id="chart7" class="chart-container"></div><br/>
+  <div id="chart4" class="chart-container"></div><br/>
+  <div id="chart2" class="chart-container"></div><br/>
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <p>As expected, there is a strong trend of increasing variance, with the total number charting rising quite significantly. With the industry now completely different from what it was over half a century ago, there are many contributors to this change. I believe primarily, however, this is due to music becoming massively more accessible[45], with the internet transforming few industries as fundamentally as media consumption[46].<br/>
+<br/>Although their spotlight was short lived, illegal pirating sites like Napster[47] paved the way for modern streaming[48], bringing about, in its effects, a quasi-socialist revolution to both the creation and consumption of music[45], providing near-universal access, radically lowered barriers to entry, and the erosion of traditional cultural gatekeeping, yet crucially, still one fundamentally driven by capitalist ideals[49]. It is these ideals that are one of the few things tempering the explosion of music variance, with the new industry controllers - the streaming service giants, such as Spotify - having a sole focus on profit gain and subscriber growth[50], to the detriment of artists. Artists are getting paid less than ever before[51], and smaller artists receive a disproportionately small percentage of revenue[43]. Yet this is seemingly not enough of a blocker, with artists’ desire and passion for music creation trumping this[52] (this struggle is not a new phenomenon, however[53]). These reduced artist profits mean more time is spent in other financial endeavours[54], leading to a reduced output rate generally for artists[55], reducing their chance of dominance.<br/>
+<br/>With a month of unlimited access to almost all music ever produced now costing the same as a single CD once did[56], consumption is now driven by taste alone, unhindered by personal financial situation, breaking down class divisions and therefore the imbalance in representation that once existed[57]. Yet, this personal taste can be dramatically influenced. Accessing music through a single point, which is owned and operated by a company trying to keep you listening, encourages the rise of the widely discussed “algorithm”[58]. This can present an illusion of choice[59], where you make the selection, but you do not necessarily decide on what you are selecting between. This isn’t necessarily new, though, with general tastes previously being decided simply by radio and TV instead[60], and by toppling this small number of gatekeepers, and expanding the points of musical exposure, streaming has widened opportunities for musical diversity[61]. Yet these algorithms are taken advantage of by the now prevalent sponsored recommendations[62], where the highest bidder is more highly exposed to listeners. This is a divisive topic[63], with it giving an opportunity for new artists to be seen, but bringing back the inequality between financial classes, now for artists rather than consumers. These algorithms also produce various side effects, with another hindrance to taste expansion being filter bubbles[64], which isolate consumers from new music by reinforcing their pre-existing preferences[76][65]. However, the rise of user-generated content on platforms such as TikTok has combated this, frequently exposing many people to a new side of music and providing a new pathway to stardom[66]. The other effect of these platforms, however, is that successes often have shorter lifespans[38], as trends are chased and enforced by these taste-informing algorithms[67]. This has additionally caused some artists to leave the album-driven release cycle, favouring smaller, more frequent releases to stay relevant[68].<br/>
+<br/>All this came to fruition in parallel with the barriers to music production and release dropping nearly completely, meaning new artists emerged at an unprecedented scale[74] to fill the new space created. Again, this was primarily due to the internet, which provided teaching and tools that were simple, cheap and available to such an extent that anyone could now release an album by themselves[67]. This, with an increase in the number of indie labels, brought new growth to the industry[61].<br/>
+<br/>Additionally, for many of the same reasons as above, the number of genres has grown exponentially[61], and once small genres are increasingly popular (Figure 9).
+</p><br/>
+  </section>
+  
+  <div id="chart5" class="chart-container"></div><br/>
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <p>This variance, particularly, is driven by an increasingly interconnected world, both informationally and socially[69], encouraging experimentation and idea blending. Without having to conform to a specific style to have any chance of exposure[11], music is less restricted, with social media generating an audience for it, providing a space for like-minded individuals to share and discuss these niche avenues of music[70]. People's tastes, therefore, are now more spread out over very distinct styles[71], and as such, it is now impossible to create a work that spans all this, and hence create something that appeals to the majority of consumers[35], unlike when popular music predominantly consisted of rock and pop (figure 10).</p>
+  </section><br/>
+  
+  <div id="chart6" class="chart-container"></div><br/>
+
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <p>Additionally, since the early 2000s, the number of bands topping the charts that had a member who either via solo work, or through another band, also topped the charts, has been slowly decreasing (Figure 11). This could imply that artists now have a more singular focus, but it also means they have less visibility, so there is less awareness of their main group, and that the popular individuals are now less prevalent. These all, however, would be mitigated by the much more significant rise in collaborations[72] between artists on shared releases (Figure 12), but collaborations are usually between solo artists and within pop/hip-hop genres (Figure 13), as opposed to rock bands, where shared members are more common (Figure 14). </p>
+  </section><br/>
+  
+  <div id="chart8" class="chart-container"></div><br/>
+  <div id="chart9" class="chart-container"></div><br/>
+
+  <div id="chart13" class="chart-container"></div><br/>
+  <div id="chart14" class="chart-container"></div><br/>
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <p>Therefore, this reduction in shared members could simply be due to the decrease in the popularity and number of bands[73] in recent times. This decline is due to many reasons, like increased cost and logistics[73], alongside being more economical for the artist, with revenue split less ways. The massive rise in collaborations, however, is yet another factor in the increased variance of modern music[38], with unique creative resources, diverse skill sets and perspectives being combined for innovative results[11].<br/>
+<br/>In conclusion, there have been many major shifts in the industry, most contributing in some way to the reduction of the legendary music icon[35], yet none more so than technological advances[74]. However, this current state is not necessarily stable[75], and it may transform just as significantly again.
+</p>
+  </section>
+  
+
+  
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <h2>Closing Remarks</h2>
+    <p>Overall, I am very happy with how the visualisation came together, both aesthetically and functionally. I decided not to display any uncertainty in the visualisation as it was either unknown, e.g. missing data like collaborations in the MusicBrainz database; or impossible to calculate, e.g. what genre an artist is[9]. One thing I would’ve liked to have added is more dynamic collaboration links, where links form in the week where the two artists first collaborated, rather than when they first appear together, but this would have added a lot more complexity in development. In terms of further investigation, repeating this exploration but for the singles chart instead could provide some compelling comparisons and further insights into the evolution of how music has been consumed over the last century.</p>
+  </section>
+  <section style="padding: 0px; max-width: 1000px; margin: 0 auto; line-height: 160%">
+    <h2>References</h2>
+    <ol>
+<li>Rentfrow, P.J. and Gosling, S.D., 2006. Message in a ballad: The role of music preferences in interpersonal perception. Psychological science, 17(3), pp.236-242.</li>
+<li>Hakanen, E.A., 1998. Counting down to number one: The evolution of the meaning of popular music charts. Popular Music, 17(1), pp.95-111.</li>
+<li>About - Official Charts (no date) Official Charts. Available at: <a href=https://www.officialcharts.com/about>https://www.officialcharts.com/about/</a> (Accessed: 26 November 2025).</li>
+<li>Mullen, J., 2017. UK Popular Music and Society in the 1970s. Revue Française de Civilisation Britannique. French Journal of British Studies , 22 (XXII-Hors série).</li>
+<li>All The Number 1 Albums | Official Charts (no date). Available at: <a href=https://www.officialcharts.com/chart-news/all-the-number-1-albums__7949>https://www.officialcharts.com/chart-news/all-the-number-1-albums__7949/</a> (Accessed: 26 November 2025).</li>
+<li>Fraiberger, S.P., Sinatra, R., Resch, M., Riedl, C. and Barabási, A.L., 2018. Quantifying reputation and success in art. Science, 362(6416), pp.825-829.</li>
+<li>About - MusicBrainz (no date). Available at: <a href=https://musicbrainz.org/doc/About>https://musicbrainz.org/doc/About</a> (Accessed: 26 November 2025).</li>
+<li>Yang, P., Shoaib, A., West, R. and Colavizza, G., 2024. Open access improves the dissemination of science: insights from Wikipedia. Scientometrics, 129(11), pp.7083-7106.</li>
+<li>Lange, E.B., Gernandt, E. and Merrill, J., 2025. Categorizing music by genres. Annals of the New York Academy of Sciences, 1550(1), pp.227-238.</li>
+<li>Deng, J., Berg, A.C., Li, K. and Fei-Fei, L., 2010, September. What does classifying more than 10,000 image categories tell us?. In European conference on computer vision (pp. 71-84). Berlin, Heidelberg: Springer Berlin Heidelberg.</li>
+<li>Silver, D., Lee, M. and Childress, C.C., 2016. Genre complexes in popular music. PloS one, 11(5), p.e0155471.</li>
+<li>Giovannangeli, L., Giot, R., Auber, D. and Bourqui, R., 2021. Impacts of the Numbers of Colors and Shapes on Outlier Detection: from Automated to User Evaluation. arXiv preprint arXiv:2103.06084.</li>
+<li>Every Number 1 charity single on the Official Chart (2020) Official Charts. Available at: <a href=https://www.officialcharts.com/chart-news/every-number-1-charity-single-on-the-official-chart__29581>https://www.officialcharts.com/chart-news/every-number-1-charity-single-on-the-official-chart__29581/</a> (Accessed: 16 December 2025).</li>
+<li>Borgo, R., Kehrer, J., Chung, D.H., Maguire, E., Laramee, R.S., Hauser, H., Ward, M. and Chen, M., 2013, May. Glyph-based visualization: Foundations, design guidelines, techniques and applications. In Eurographics (state of the art reports) (pp. 39-63).</li>
+<li>Shneiderman, B., 2003. The eyes have it: A task by data type taxonomy for information visualizations. In The craft of information visualization (pp. 364-371). Morgan Kaufmann.</li>
+<li>Weihs, C., 1993. Multivariate exploratory data analysis and graphics: A tutorial. Journal of Chemometrics, 7(5), pp.305-340.</li>
+<li>Hullman, J. and Gelman, A., 2021. Designing for interactive exploratory data analysis requires theories of graphical inference. Harvard Data Science Review, 3(3).</li>
+<li>Aigner, W., Miksch, S., Schumann, H. and Tominski, C., 2011. Visualization of time-oriented data (Vol. 4). London: Springer.</li>
+<li>Li, Q., 2018. Data visualization as creative art practice. Visual Communication, 17(3), pp.299-312.</li>
+<li>Rzeszotarski, J.M. and Kittur, A., 2014, April. Kinetica: Naturalistic multi-touch data visualization. In Proceedings of the SIGCHI Conference on Human Factors in Computing Systems (pp. 897-906).</li>
+<li>Haroz, S. and Whitney, D., 2012. How capacity limits of attention influence information visualization effectiveness. IEEE Transactions on Visualization and Computer Graphics, 18(12), pp.2402-2410.</li>
+<li>Zhang, L. and Tu, W., 2009. Six degrees of separation in online society.</li>
+<li>Hans Rosling’s 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC (2010). Available at: <a href=https://www.youtube.com/watch?v=jbkSRLYSojo>https://www.youtube.com/watch?v=jbkSRLYSojo</a> (Accessed: 26 November 2025).</li>
+<li>Open Syllabus: Galaxy (no date) Open Syllabus. Available at: <a href=https://galaxy.opensyllabus.org>https://galaxy.opensyllabus.org/</a> (Accessed: 26 November 2025).</li>
+<li>Van Long, T. and Linsen, L., 2009, June. MultiClusterTree: interactive visual exploration of hierarchical clusters in multidimensional multivariate data. In Computer Graphics Forum (Vol. 28, No. 3, pp. 823-830). Oxford, UK: Blackwell Publishing Ltd.</li>
+<li>Camgöz, N., Yener, C. and Güvenç, D., 2002. Effects of hue, saturation, and brightness on preference. Color Research & Application: Endorsed by Inter‐Society Color Council, The Colour Group (Great Britain), Canadian Society for Color, Color Science Association of Japan, Dutch Society for the Study of Color, The Swedish Colour Centre Foundation, Colour Society of Australia, Centre Français de la Couleur, 27(3), pp.199-207.</li>
+<li>Cockburn, A., Karlson, A. and Bederson, B.B., 2009. A review of overview+ detail, zooming, and focus+ context interfaces. ACM Computing Surveys (CSUR), 41(1), pp.1-31.</li>
+<li>Cleveland, W.S. and McGill, R., 1984. Graphical perception: Theory, experimentation, and application to the development of graphical methods. Journal of the American statistical association, 79(387), pp.531-554.</li>
+<li>Holm, J., Aaltonen, A. and Siirtola, H., 2009. Associating colours with musical genres. Journal of New Music Research, 38(1), pp.87-100.</li>
+<li>Imhof, E., 2007. Cartographic relief presentation. ESRI, Inc.</li>
+<li>Buffart, H. and Leeuwenberg, E., 1983. Structural information theory. In Advances in psychology (Vol. 11, pp. 48-72). North-Holland.</li>
+<li>Dianati, N., 2016. Unwinding the hairball graph: Pruning algorithms for weighted complex networks. Physical Review E, 93(1), p.012304.</li>
+<li>Tonks, P., 2001. Film music. Pocket Essentials.</li>
+<li>Hehman, E. and Xie, S.Y., 2021. Doing better data visualization. Advances in Methods and Practices in Psychological Science, 4(4), p.25152459211045334.</li>
+<li>Armstrong, R., 2008. The Long Tail: Why the Future of Business is Selling Less of More. Canadian Journal of Communication. 33(1), 127.</li>
+<li>Hendricks, K. and Sorensen, A., 2009. Information and the skewness of music sales. Journal of political Economy, 117(2), pp.324-369.</li>
+<li>Treitler, L., 1999. The historiography of music: Issues of past and present. Rethinking music, 2, pp.356-377.</li>
+<li>Lech, M.E., Lehmann, S. and Juul, J.L., 2025. Is it getting harder to make a hit? Evidence from 65 years of US music chart history. EPJ Data Science, 14(1), p.67.</li>
+<li>Collins, M., 2020. ‘I say high, you say low’: the Beatles and cultural hierarchies in 1960s and 1970s Britain. Popular Music, 39(3-4), pp.401-419.</li>
+<li>Coman, C., Meseșan-Schmitz, L., Dobrescu, A. and Bătrânu-Pințea, V., 2025. How did the Beatles impact cultural movement on different generations?. Frontiers in Communication, 9, p.1525016.</li>
+<li>Sunstein, C.R., 2022. Beatlemania: on informational cascades and spectacular success. The Journal of Beatles Studies, 2022(Autumn), pp.97-120.</li>
+<li>SOUTH PACIFIC (1958) Official Charts. Available at: <a href=https://www.officialcharts.com/albums/original-soundtrack-south-pacific>https://www.officialcharts.com/albums/original-soundtrack-south-pacific/</a> (Accessed: 16 December 2025).</li>
+<li>Coelho, M.P. and Mendes, J.Z., 2019. Digital music and the “death of the long tail”. Journal of Business Research, 101, pp.454-460.</li>
+<li>North, A.C., Hargreaves, D.J. and Hargreaves, J.J., 2004. Uses of music in everyday life. Music perception, 22(1), pp.41-77.</li>
+<li>Brusila, J., Cloonan, M. and Ramstedt, K., 2022. Music, digitalization, and democracy. </li>
+<li>Chen, X., 2024. Impact of the Internet on entertainment media industries: The double effects of Metcalfe and McLuhan. Information Services and Use, 44(2), pp.93-105.</li>
+<li>Carlsson, B. and Gustavsson, R., 2001, December. The rise and fall of napster-an evolutionary approach. In International Computer Science Conference on Active Media Technology (pp. 347-354). Berlin, Heidelberg: Springer Berlin Heidelberg.</li>
+<li>Knopper, S., 2009. Appetite for self-destruction: The spectacular crash of the record industry in the digital age. Simon and Schuster.</li>
+<li>Srnicek, N., 2017. Platform capitalism. John Wiley & Sons.</li>
+<li>Morris, J.W., 2020. Music platforms and the optimization of culture. Social Media+ Society, 6(3), p.2056305120940690.</li>
+<li>Mühlbach, S. and Arora, P., 2020. Behind the music: How labor changed for musicians through the subscription economy. First Monday.</li>
+<li>Kwon, H., Kim, S. and Yang, J., 2018. What makes them dream on? the influence of social and psychological assets on young musicians’ decision to stay in the profession. Development and Society, 47(3), pp.371-400.</li>
+<li>Albini, S., 1993. The problem with music. The Baffler, (5), pp.31-38.</li>
+<li>Burkhalter, J.N. and Thornton, C.G., 2014. Advertising to the beat: An analysis of brand placements in hip-hop music videos. Journal of marketing communications, 20(5), pp.366-382.</li>
+<li>Gourévitch, B., 2023. Billboard 200: The Lessons of Musical Success in the US. Music & Science, 6, p.20592043231186692.</li>
+<li>Brennan, M. and Devine, K., 2020. The cost of music. Popular Music, 39(1), pp.43-65.</li>
+<li>Webster, J., 2020. Taste in the platform age: Music streaming services and new forms of class distinction. Information, Communication & Society, 23(13), pp.1909-1924.</li>
+<li>Gillespie, T., 2019. Algorithmically recognizable: Santorum's Google problem, and Google's Santorum problem. In The Social Power of Algorithms (pp. 63-80). Routledge.</li>
+<li>Ghori, M.F., Dehpanah, A., Gemmell, J. and Mobasher, B., 2025, June. " They Only Offer the Illusion of Choice": Exploring User Perceptions of Control and Agency on YouTube. In Adjunct Proceedings of the 33rd ACM Conference on User Modeling, Adaptation and Personalization (pp. 214-218).</li>
+<li>Lange, B., 2016. The evolution of music tastemakers in the digital age: the rise of algorithms and the response of journalists. In The production and consumption of music in the digital age (pp. 237-247). Routledge.</li>
+<li>Bello, P. and Garcia, D., 2021. Cultural Divergence in popular music: the increasing diversity of music consumption on Spotify across countries. Humanities and Social Sciences Communications, 8(1), pp.1-8.</li>
+<li>Showcase – Spotify for Artists (no date). Available at: <a href=https://artists.spotify.com/showcase>https://artists.spotify.com/showcase</a> (Accessed: 16 December 2025).</li>
+<li>Bhargava, H.K. and Feng, J., 2006. Pay for play: Sponsored recommendations in information gatekeepers. Available at SSRN 721243.</li>
+<li>Areeb, Q.M., Nadeem, M., Sohail, S.S., Imam, R., Doctor, F., Himeur, Y., Hussain, A. and Amira, A., 2023. Filter bubbles in recommender systems: Fact or fallacy—A systematic review. Wiley Interdisciplinary Reviews: Data Mining and Knowledge Discovery, 13(6), p.e1512.</li>
+<li>Prey, R., 2019. Knowing me, knowing you: Datafication on music streaming platforms. In Big Data und Musik: Jahrbuch für Musikwirtschafts-und Musikkulturforschung 1/2018 (pp. 9-21). Wiesbaden: Springer Fachmedien Wiesbaden.</li>
+<li>Radovanović, B.S., 2022. TikTok and sound: Changing the ways of creating, promoting, distributing and listening to music. INSAM Journal of Contemporary Music, Art and Technology, (9), pp.51-73.</li>
+<li>Hodgson, T., 2021. Spotify and the democratisation of music. Popular Music, 40(1), pp.1-17.</li>
+<li>Stone, P.W., 2024. Rise of the microsong: the platformification of music on TikTok as an artform. INSAM Journal of Contemporary Music, Art and Technology, (13), pp.69-84.</li>
+<li>Schneider, L. and Gros, C., 2019. Five decades of US, UK, German and Dutch music charts show that cultural processes are accelerating. Royal Society open science, 6(8), p.190944.</li>
+<li>Park, M., Weber, I., Naaman, M. and Vieweg, S., 2015. Understanding musical diversity via online social media. In Proceedings of the International AAAI Conference on Web and Social Media (Vol. 9, No. 1, pp. 308-317).</li>
+<li>Datta, H., Knox, G. and Bronnenberg, B.J., 2018. Changing their tune: How consumers’ adoption of online streaming affects music consumption and discovery. Marketing Science, 37(1), pp.5-21.</li>
+<li>McDermott, M., 2019. Please, pop stars, no more collaborations. USA Today, pp.03D-03D.</li>
+<li>Lynskey, D. (2021) ‘Why bands are disappearing: “Young people aren’t excited by them”’, The Guardian, 18 March. Available at: <a href=https://www.theguardian.com/music/2021/mar/18/why-bands-are-disappearing-young-people-arent-excited-by-them>https://www.theguardian.com/music/2021/mar/18/why-bands-are-disappearing-young-people-arent-excited-by-them</a> (Accessed: 16 December 2025).</li>
+<li>Ordanini, A. and Nunes, J.C., 2016. From fewer blockbusters by more superstars to more blockbusters by fewer superstars: How technological innovation has impacted convergence on the music chart. International Journal of Research in Marketing, 33(2), pp.297-313.</li>
+<li>Mauch, M., MacCallum, R.M., Levy, M. and Leroi, A.M., 2015. The evolution of popular music: USA 1960–2010. Royal Society open science, 2(5), p.150081.</li>
+<li>Barberá, P., Jost, J.T., Nagler, J., Tucker, J.A. and Bonneau, R., 2015. Tweeting from left to right: Is online political communication more than an echo chamber?. Psychological science, 26(10), pp.1531-1542.</li>
+    </ol>
+  </section>
+    <section style="padding: 0px; max-width: 1000px; margin: 0 auto;">
+    <h2>Figure Table</h2>
+    <h3>Data Sources</h3>
+    All figures use the same data:
+    <ul>
+      <li>All Number One Albums, Official Charts, <a href=https://www.officialcharts.com/chart-news/all-the-number-1-albums__7949/>https://www.officialcharts.com/chart-news/all-the-number-1-albums__7949/</a> .</li>
+      <li>MusicBrainz, <a href=https://musicbrainz.org/doc/About>https://musicbrainz.org/doc/About.</a></li>
+    </ul>
+    See the Data Biography section for details on how they were gathered.<br/>
+    Figure 1 plots data between 1956 and 2025, whilst the rest plot between 1969 and 2024.
+    <h3>Creation Method</h3>
+    All figures were created using the D3JS Javascript code library.
+    <h3>Figures</h3>
+
+    <ol>
+<li>An interactive, force-directed network visualisation, simulating the UK number-one album chart history, with artists as nodes, modified by their chart behaviour.</li>
+<li>Scatterplot showing the average percentage of a year that an artist who tops the chart for is on top for, per year.</li>
+<li>Scatterplot showing the maximum percentage of a year that an artist topped the chart for, per year.</li>
+<li>Scatterplot showing the average percentage of a year that an album that tops the chart for is on top for, per year.</li>
+<li>Scatterplot showing the maximum percentage of a year that an album topped the chart for, per year.</li>
+<li>Scatterplot showing the number of different artists that topped the chart for the first time, per year.</li>
+<li>Scatterplot showing the number of different artists that topped the chart, per year.</li>
+<li>Scatterplot showing the number of different albums that topped the chart, per year.</li>
+<li>Scatterplot showing the number of different genres (from the selected subset) that topped the chart, per year.</li>
+<li>Scatterplot showing the percentage of the year that a genre other than rock or pop topped the chart for, per year.</li>
+<li>Line graph showing the percentage of chart topping artists that have a shared member with another chart topping artist.</li>
+<li>Line graph showing the percentage of chart topping artists that have collaborated with another chart topping artist.</li>
+<li>Multiline graph showing the percentage of chart topping artists for both Rock and Pop/Hip-Hop that have collaborated with another chart topping artist.</li>
+<li>Multiline graph showing the percentage of chart topping artists for both Rock and Pop/Hip-Hop that have a shared member with another chart topping artist.</li>
+
+    </ol>
+  </section>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script>
-  const weeksData = [
+    
+    const collabData = [
+      ["50 CENT", "AKON"],
+      ["50 CENT", "ALICIA KEYS"],
+      ["50 CENT", "CHRIS BROWN"],
+      ["50 CENT", "DR. DRE"],
+      ["50 CENT", "ED SHEERAN"],
+      ["50 CENT", "EMINEM"],
+      ["50 CENT", "JAY-Z"],
+      ["50 CENT", "JUSTIN TIMBERLAKE"],
+      ["50 CENT", "KENDRICK LAMAR"],
+      ["50 CENT", "POP SMOKE"],
+      ["ABBA", "BEE GEES"],
+      ["ABBA", "QUEEN"],
+      ["ABC", "DEPECHE MODE"],
+      ["AKON", "DR. DRE"],
+      ["AKON", "EMINEM"],
+      ["AKON", "LIONEL RICHIE"],
+      ["AKON", "MICHAEL JACKSON"],
+      ["AKON", "SHAGGY"],
+      ["ALICIA KEYS", "BEYONCE"],
+      ["ALICIA KEYS", "DRAKE"],
+      ["ALICIA KEYS", "JACK WHITE"],
+      ["ALICIA KEYS", "JAMES BAY"],
+      ["ALICIA KEYS", "JAY-Z"],
+      ["ALICIA KEYS", "KENDRICK LAMAR"],
+      ["ALICIA KEYS", "NORAH JONES"],
+      ["ALICIA KEYS", "USHER"],
+      ["ALL SAINTS", "STING"],
+      ["ALL TIME LOW", "AVRIL LAVIGNE"],
+      ["AMY WINEHOUSE", "MARK RONSON"],
+      ["ANDREA BOCELLI", "ARIANA GRANDE"],
+      ["ANDREA BOCELLI", "CELINE DION"],
+      ["ANDREA BOCELLI", "ED SHEERAN"],
+      ["ANDREA BOCELLI", "ELLIE GOULDING"],
+      ["ANDREA BOCELLI", "SHANIA TWAIN"],
+      ["ANNIE LENNOX", "EURYTHMICS"],
+      ["ARIANA GRANDE", "CALVIN HARRIS"],
+      ["ARIANA GRANDE", "JUSTIN BIEBER"],
+      ["ARIANA GRANDE", "LADY GAGA"],
+      ["ARIANA GRANDE", "LANA DEL REY"],
+      ["ARIANA GRANDE", "MARIAH CAREY"],
+      ["ARIANA GRANDE", "MIKA"],
+      ["ARIANA GRANDE", "MILEY CYRUS"],
+      ["ARIANA GRANDE", "NICKI MINAJ"],
+      ["ARIANA GRANDE", "PHARRELL WILLIAMS"],
+      ["ARIANA GRANDE", "THE WEEKND"],
+      ["AVRIL LAVIGNE", "BRYAN ADAMS"],
+      ["AVRIL LAVIGNE", "JUSTIN BIEBER"],
+      ["AVRIL LAVIGNE", "MICHAEL BUBLE"],
+      ["AVRIL LAVIGNE", "NICKI MINAJ"],
+      ["AVRIL LAVIGNE", "YUNGBLUD"],
+      ["BARBRA STREISAND", "BARRY GIBB"],
+      ["BARBRA STREISAND", "BARRY MANILOW"],
+      ["BARBRA STREISAND", "BRYAN ADAMS"],
+      ["BARBRA STREISAND", "HOZIER"],
+      ["BARBRA STREISAND", "LIONEL RICHIE"],
+      ["BARBRA STREISAND", "NEIL DIAMOND"],
+      ["BARBRA STREISAND", "PAUL MCCARTNEY"],
+      ["BARRY GIBB", "COLDPLAY"],
+      ["BARRY MANILOW", "CILLA BLACK"],
+      ["BARRY MANILOW", "THE ROLLING STONES"],
+      ["BASTILLE", "CRAIG DAVID"],
+      ["BASTILLE", "RUDIMENTAL"],
+      ["BEACH BOYS", "STATUS QUO"],
+      ["BEYONCE", "ED SHEERAN"],
+      ["BEYONCE", "EMINEM"],
+      ["BEYONCE", "JAM"],
+      ["BEYONCE", "JAY-Z"],
+      ["BEYONCE", "JUSTIN TIMBERLAKE"],
+      ["BEYONCE", "LADY GAGA"],
+      ["BEYONCE", "MILEY CYRUS"],
+      ["BEYONCE", "NICKI MINAJ"],
+      ["BEYONCE", "TRAVIS SCOTT"],
+      ["BILLIE EILISH", "JUSTIN BIEBER"],
+      ["BLACK SABBATH", "METALLICA"],
+      ["BLACKPINK", "DUA LIPA"],
+      ["BLACKPINK", "LADY GAGA"],
+      ["BLONDIE", "NEW ORDER"],
+      ["BOB DYLAN", "BRUCE SPRINGSTEEN"],
+      ["BOB DYLAN", "GEORGE HARRISON"],
+      ["BON JOVI", "BRUCE SPRINGSTEEN"],
+      ["BON JOVI", "ROBBIE WILLIAMS"],
+      ["BONNIE TYLER", "JOHNNY HATES JAZZ"],
+      ["BONNIE TYLER", "MIKE OLDFIELD"],
+      ["BONNIE TYLER", "SHAKIN' STEVENS"],
+      ["BREAD", "THE ROLLING STONES"],
+      ["BRING ME THE HORIZON", "ED SHEERAN"],
+      ["BRING ME THE HORIZON", "YUNGBLUD"],
+      ["BRUCE SPRINGSTEEN", "KILLERS"],
+      ["BRUCE SPRINGSTEEN", "THE KILLERS"],
+      ["BRUNO MARS", "ED SHEERAN"],
+      ["BRUNO MARS", "LADY GAGA"],
+      ["BRUNO MARS", "MARK RONSON"],
+      ["BRYAN ADAMS", "MICHAEL BUBLE"],
+      ["BRYAN ADAMS", "ROD STEWART"],
+      ["BRYAN ADAMS", "STING"],
+      ["BRYAN ADAMS", "TINA TURNER"],
+      ["BTS", "CHARLI XCX"],
+      ["BTS", "COLDPLAY"],
+      ["BTS", "JUICE WRLD"],
+      ["BURNA BOY", "COLDPLAY"],
+      ["BURNA BOY", "DAVE"],
+      ["BURNA BOY", "LILY ALLEN"],
+      ["BURNA BOY", "SAM SMITH"],
+      ["BURNA BOY", "STORMZY"],
+      ["BURNA BOY", "TRAVIS SCOTT"],
+      ["BUSTED", "HANSON"],
+      ["CALVIN HARRIS", "DUA LIPA"],
+      ["CALVIN HARRIS", "ELLIE GOULDING"],
+      ["CALVIN HARRIS", "EXAMPLE"],
+      ["CALVIN HARRIS", "FRANK OCEAN"],
+      ["CALVIN HARRIS", "HAIM"],
+      ["CALVIN HARRIS", "JOHN NEWMAN"],
+      ["CALVIN HARRIS", "JUSTIN TIMBERLAKE"],
+      ["CALVIN HARRIS", "KATY PERRY"],
+      ["CALVIN HARRIS", "PHARRELL WILLIAMS"],
+      ["CALVIN HARRIS", "RIHANNA"],
+      ["CALVIN HARRIS", "SAM SMITH"],
+      ["CALVIN HARRIS", "THE WEEKND"],
+      ["CALVIN HARRIS", "TOM GRENNAN"],
+      ["CELINE DION", "GLORIA ESTEFAN"],
+      ["CELINE DION", "JOSH GROBAN"],
+      ["CELINE DION", "LUCIANO PAVAROTTI"],
+      ["CELINE DION", "MARIAH CAREY"],
+      ["CELINE DION", "SHANIA TWAIN"],
+      ["CHARLI XCX", "HAIM"],
+      ["CHARLI XCX", "RITA ORA"],
+      ["CHARLI XCX", "SAM SMITH"],
+      ["CHER", "ERIC CLAPTON"],
+      ["CHER", "MICHAEL BUBLE"],
+      ["CHRIS BROWN", "JUSTIN BIEBER"],
+      ["CHRIS BROWN", "NICKI MINAJ"],
+      ["CHRIS BROWN", "RITA ORA"],
+      ["CHRIS BROWN", "USHER"],
+      ["CHRISTINA AGUILERA", "LADY GAGA"],
+      ["CHRISTINA AGUILERA", "MAROON 5"],
+      ["CHRISTINA AGUILERA", "NICKI MINAJ"],
+      ["CIAN DUCROT", "ELLA HENDERSON"],
+      ["CLIFF RICHARD", "ELTON JOHN"],
+      ["CLIFF RICHARD", "JANET JACKSON"],
+      ["COLDPLAY", "KYLIE MINOGUE"],
+      ["COLDPLAY", "RIHANNA"],
+      ["CRAIG DAVID", "KATY B"],
+      ["CRAIG DAVID", "KSI"],
+      ["CRAIG DAVID", "STING"],
+      ["CRANBERRIES", "WESTLIFE"],
+      ["D12", "EMINEM"],
+      ["D12", "GORILLAZ"],
+      ["DAFT PUNK", "GORILLAZ"],
+      ["DAFT PUNK", "MICHAEL JACKSON"],
+      ["DAFT PUNK", "NEW ORDER"],
+      ["DAFT PUNK", "PHARRELL WILLIAMS"],
+      ["DAFT PUNK", "QUEEN"],
+      ["DAFT PUNK", "THE CHEMICAL BROTHERS"],
+      ["DAFT PUNK", "THE WEEKND"],
+      ["DAVE", "HEADIE ONE"],
+      ["DAVID BOWIE", "LENNY KRAVITZ"],
+      ["DAVID BOWIE", "QUEEN"],
+      ["DAVID GILMOUR", "ORB"],
+      ["DEEP PURPLE", "FOREIGNER"],
+      ["DEEP PURPLE", "QUEEN"],
+      ["DEEP PURPLE", "T. REX"],
+      ["DIANA ROSS", "KATE BUSH"],
+      ["DIANA ROSS", "LIONEL RICHIE"],
+      ["DIANA ROSS", "MICHAEL JACKSON"],
+      ["DIANA ROSS", "WESTLIFE"],
+      ["DIDO", "FAITHLESS"],
+      ["DIDO", "KENDRICK LAMAR"],
+      ["DIGGA D", "RUDIMENTAL"],
+      ["DIRE STRAITS", "METALLICA"],
+      ["DISCLOSURE", "LONDON GRAMMAR"],
+      ["DISCLOSURE", "LORDE"],
+      ["DISCLOSURE", "SAM SMITH"],
+      ["DISCLOSURE", "SLOWTHAI"],
+      ["DISCLOSURE", "THE WEEKND"],
+      ["DR. DRE", "EMINEM"],
+      ["DR. DRE", "KENDRICK LAMAR"],
+      ["DRAKE", "EMINEM"],
+      ["DRAKE", "HEADIE ONE"],
+      ["DRAKE", "JUSTIN BIEBER"],
+      ["DRAKE", "NICKI MINAJ"],
+      ["DRAKE", "RIHANNA"],
+      ["DRAKE", "THE WEEKND"],
+      ["DRAKE", "TRAVIS SCOTT"],
+      ["DUA LIPA", "MILEY CYRUS"],
+      ["EAST 17", "GABRIELLE"],
+      ["ED SHEERAN", "ELTON JOHN"],
+      ["ED SHEERAN", "EMINEM"],
+      ["ED SHEERAN", "J HUS"],
+      ["ED SHEERAN", "JUSTIN BIEBER"],
+      ["ED SHEERAN", "PASSENGER"],
+      ["ED SHEERAN", "RUDIMENTAL"],
+      ["ED SHEERAN", "STORMZY"],
+      ["ED SHEERAN", "TAYLOR SWIFT"],
+      ["ED SHEERAN", "TRAVIS SCOTT"],
+      ["ELASTICA", "SUPERGRASS"],
+      ["ELBOW", "U2"],
+      ["ELLA HENDERSON", "NATASHA BEDINGFIELD"],
+      ["ELLA HENDERSON", "RUDIMENTAL"],
+      ["ELLA HENDERSON", "TOM GRENNAN"],
+      ["ELLIE GOULDING", "JUICE WRLD"],
+      ["ELLIE GOULDING", "TINIE TEMPAH"],
+      ["ELTON JOHN", "ERIC CLAPTON"],
+      ["ELTON JOHN", "GEORGE MICHAEL"],
+      ["ELTON JOHN", "GORILLAZ"],
+      ["ELTON JOHN", "JOHN LENNON"],
+      ["ELTON JOHN", "LADY GAGA"],
+      ["ELTON JOHN", "LUCIANO PAVAROTTI"],
+      ["ELTON JOHN", "MILEY CYRUS"],
+      ["ELTON JOHN", "PAUL YOUNG"],
+      ["ELTON JOHN", "SAM FENDER"],
+      ["ELVIS PRESLEY", "SUSAN BOYLE"],
+      ["EMINEM", "JACK WHITE"],
+      ["EMINEM", "JUICE WRLD"],
+      ["EMINEM", "RIHANNA"],
+      ["ENGELBERT HUMPERDINCK", "RED HOT CHILI PEPPERS"],
+      ["ENRIQUE IGLESIAS", "KYLIE MINOGUE"],
+      ["ENRIQUE IGLESIAS", "LIONEL RICHIE"],
+      ["ENRIQUE IGLESIAS", "USHER"],
+      ["ENRIQUE IGLESIAS", "WHITNEY HOUSTON"],
+      ["ENYA", "PRODIGY"],
+      ["ENYA", "THE PRODIGY"],
+      ["ERASURE", "YAZOO"],
+      ["ERIC CLAPTON", "STING"],
+      ["EURYTHMICS", "NEW ORDER"],
+      ["EVA CASSIDY", "KATIE MELUA"],
+      ["EXAMPLE", "PET SHOP BOYS"],
+      ["FACES", "ROD STEWART"],
+      ["FATBOY SLIM", "LEFTFIELD"],
+      ["FATBOY SLIM", "MACY GRAY"],
+      ["FATBOY SLIM", "RITA ORA"],
+      ["FATBOY SLIM", "THE ROLLING STONES"],
+      ["FIVE", "QUEEN"],
+      ["FLORENCE + THE MACHINE", "THE MACCABEES"],
+      ["FLORENCE + THE MACHINE", "THE XX"],
+      ["FRANK SINATRA", "LUCIANO PAVAROTTI"],
+      ["FRANK TURNER", "LOTTERY WINNERS"],
+      ["FRANK TURNER", "THE LOTTERY WINNERS"],
+      ["FRANKIE GOES TO HOLLYWOOD", "STING"],
+      ["GARY BARLOW", "MICHAEL BUBLE"],
+      ["GARY BARLOW", "ROBBIE WILLIAMS"],
+      ["GENESIS", "PHIL COLLINS"],
+      ["GEORGE BENSON", "GORILLAZ"],
+      ["GEORGE MICHAEL", "QUEEN"],
+      ["GEORGE MICHAEL", "WHITNEY HOUSTON"],
+      ["GIRLS ALOUD", "SUGABABES"],
+      ["GORILLAZ", "IDLES"],
+      ["GORILLAZ", "SLOWTHAI"],
+      ["GRACIE ABRAMS", "NOAH KAHAN"],
+      ["GREEN DAY", "U2"],
+      ["HEADIE ONE", "KSI"],
+      ["HEADIE ONE", "STORMZY"],
+      ["HOZIER", "MUMFORD & SONS"],
+      ["HOZIER", "NOAH KAHAN"],
+      ["IMAGINE DRAGONS", "KENDRICK LAMAR"],
+      ["JACK SAVORETTI", "KYLIE"],
+      ["JACK SAVORETTI", "KYLIE MINOGUE"],
+      ["JACK SAVORETTI", "MIKA"],
+      ["JAKE BUGG", "TINIE TEMPAH"],
+      ["JAM", "R.E.M."],
+      ["JAMES ARTHUR", "RUDIMENTAL"],
+      ["JAMES ARTHUR", "YOU ME AT SIX"],
+      ["JAMES BAY", "MAISIE PETERS"],
+      ["JAMES BAY", "NOAH KAHAN"],
+      ["JAMES BLUNT", "WARD THOMAS"],
+      ["JAMES MORRISON", "JOSS STONE"],
+      ["JANET JACKSON", "LUTHER VANDROSS"],
+      ["JANET JACKSON", "MADONNA"],
+      ["JASON DONOVAN", "KYLIE"],
+      ["JASON DONOVAN", "KYLIE MINOGUE"],
+      ["JAY-Z", "JUSTIN TIMBERLAKE"],
+      ["JAY-Z", "LINKIN PARK"],
+      ["JAY-Z", "RIHANNA"],
+      ["JESS GLYNNE", "RUDIMENTAL"],
+      ["JESS GLYNNE", "TINIE TEMPAH"],
+      ["JLS", "TINIE TEMPAH"],
+      ["JOHN NEWMAN", "RUDIMENTAL"],
+      ["JOHNNY HATES JAZZ", "MIKE OLDFIELD"],
+      ["JOSS STONE", "SHAGGY"],
+      ["JUICE WRLD", "JUSTIN BIEBER"],
+      ["JUICE WRLD", "NICKI MINAJ"],
+      ["JUICE WRLD", "POST MALONE"],
+      ["JUICE WRLD", "THE WEEKND"],
+      ["JUSTIN BIEBER", "POST MALONE"],
+      ["JUSTIN BIEBER", "USHER"],
+      ["JUSTIN TIMBERLAKE", "MADONNA"],
+      ["KASABIAN", "THE PRODIGY"],
+      ["KATE BUSH", "PETER GABRIEL"],
+      ["KATY B", "MARK RONSON"],
+      ["KATY PERRY", "NICKI MINAJ"],
+      ["KELLY ROWLAND", "TINIE TEMPAH"],
+      ["KENDRICK LAMAR", "MAROON 5"],
+      ["KENDRICK LAMAR", "ROBIN THICKE"],
+      ["KENDRICK LAMAR", "THE WEEKND"],
+      ["KENDRICK LAMAR", "TRAVIS SCOTT"],
+      ["KSI", "NINES"],
+      ["KSI", "TOM GRENNAN"],
+      ["KSI", "YUNGBLUD"],
+      ["KYLIE", "YEARS & YEARS"],
+      ["KYLIE MINOGUE", "ROBBIE WILLIAMS"],
+      ["KYLIE MINOGUE", "YEARS & YEARS"],
+      ["LANA DEL REY", "PLAYBOI CARTI"],
+      ["LANA DEL REY", "THE WEEKND"],
+      ["LEONA LEWIS", "PAUL MCCARTNEY"],
+      ["LILY ALLEN", "MARK RONSON"],
+      ["LINKIN PARK", "STORMZY"],
+      ["LIONEL RICHIE", "LUCIANO PAVAROTTI"],
+      ["LIONEL RICHIE", "SHANIA TWAIN"],
+      ["LITTLE MIX", "NICKI MINAJ"],
+      ["LITTLE MIX", "STORMZY"],
+      ["LORDE", "POST MALONE"],
+      ["LUTHER VANDROSS", "MARIAH CAREY"],
+      ["MADONNA", "NICKI MINAJ"],
+      ["MADONNA", "SAM SMITH"],
+      ["MADONNA", "THE WEEKND"],
+      ["MARIAH CAREY", "WESTLIFE"],
+      ["MARIAH CAREY", "WHITNEY HOUSTON"],
+      ["MARK RONSON", "MILEY CYRUS"],
+      ["MARK RONSON", "SABRINA CARPENTER"],
+      ["MAROON 5", "NICKI MINAJ"],
+      ["MAROON 5", "RIHANNA"],
+      ["MEGHAN TRAINOR", "NICKI MINAJ"],
+      ["MICHAEL BALL", "SUSAN BOYLE"],
+      ["MICHAEL JACKSON", "PAUL MCCARTNEY"],
+      ["MIKA", "PHARRELL WILLIAMS"],
+      ["MILEY CYRUS", "PHARRELL WILLIAMS"],
+      ["MORGAN WALLEN", "POST MALONE"],
+      ["MUMFORD & SONS", "PHARRELL WILLIAMS"],
+      ["NATASHA BEDINGFIELD", "PAUL MCCARTNEY"],
+      ["NICKELBACK", "THE LOTTERY WINNERS"],
+      ["NICKI MINAJ", "POP SMOKE"],
+      ["NICKI MINAJ", "RIHANNA"],
+      ["NICKI MINAJ", "ROBIN THICKE"],
+      ["NICKI MINAJ", "USHER"],
+      ["NICKI MINAJ", "ZAYN"],
+      ["NIRVANA", "THE PRODIGY"],
+      ["NOAH KAHAN", "OLIVIA RODRIGO"],
+      ["NOAH KAHAN", "POST MALONE"],
+      ["NOAH KAHAN", "SAM FENDER"],
+      ["NORAH JONES", "PAUL MCCARTNEY"],
+      ["NORAH JONES", "THE NATIONAL"],
+      ["NOTHING BUT THIEVES", "RAG'N'BONE MAN"],
+      ["OLIVIA DEAN", "SAM FENDER"],
+      ["PAUL MCCARTNEY", "RIHANNA"],
+      ["PAUL MCCARTNEY", "U2"],
+      ["PET SHOP BOYS", "ROBBIE WILLIAMS"],
+      ["PET SHOP BOYS", "YEARS & YEARS"],
+      ["PHARRELL WILLIAMS", "ROBIN THICKE"],
+      ["PHARRELL WILLIAMS", "TRAVIS SCOTT"],
+      ["PHARRELL WILLIAMS", "TYLER, THE CREATOR"],
+      ["PHIL COLLINS", "STING"],
+      ["PLAYBOI CARTI", "THE WEEKND"],
+      ["PLAYBOI CARTI", "TRAVIS SCOTT"],
+      ["POLICE", "STING"],
+      ["POST MALONE", "TAYLOR SWIFT"],
+      ["POST MALONE", "THE WEEKND"],
+      ["POST MALONE", "TRAVIS SCOTT"],
+      ["RITA ORA", "RUDIMENTAL"],
+      ["RITA ORA", "TINIE TEMPAH"],
+      ["ROD STEWART", "TINA TURNER"],
+      ["RONAN KEATING", "SHANIA TWAIN"],
+      ["RUDIMENTAL", "TOM WALKER"],
+      ["SCOOTER", "STATUS QUO"],
+      ["SHAGGY", "STING"],
+      ["STEREOPHONICS", "TOM JONES"],
+      ["STING", "TINA TURNER"],
+      ["TAYLOR SWIFT", "ZAYN"],
+      ["THE 1975", "TRAVIS SCOTT"],
+      ["THE ROLLING STONES", "WHAM!"],
+      ["THE WEEKND", "TRAVIS SCOTT"],
+      ["TINA TURNER", "TOM JONES"],
+      ["TOM JONES", "TORI AMOS"]
+    ];
+    const sharedMemberData = [
+        ["ABC", "SIMPLY RED"],
+        ["ALISON MOYET", "YAZOO"],
+        ["ANDY WILLIAMS", "DOVES"],
+        ["ANNIE LENNOX", "EURYTHMICS"],
+        ["ARCTIC MONKEYS", "LAST SHADOW PUPPETS"],
+        ["ARCTIC MONKEYS", "THE LAST SHADOW PUPPETS"],
+        ["ATOMIC KITTEN", "SUGABABES"],
+        ["BARRY GIBB", "BEE GEES"],
+        ["BASTILLE", "ED SHEERAN"],
+        ["BASTILLE", "ELBOW"],
+        ["BASTILLE", "ELLIE GOULDING"],
+        ["BASTILLE", "OLLY MURS"],
+        ["BASTILLE", "ONE DIRECTION"],
+        ["BASTILLE", "PALOMA FAITH"],
+        ["BASTILLE", "RITA ORA"],
+        ["BASTILLE", "SAM SMITH"],
+        ["BEACH BOYS", "GLEN CAMPBELL"],
+        ["BEATLES", "GEORGE HARRISON"],
+        ["BEATLES", "JOHN LENNON"],
+        ["BEATLES", "PAUL MCCARTNEY"],
+        ["BEATLES", "TRAVELING WILBURYS"],
+        ["BEATLES", "WINGS"],
+        ["BEYONCE", "DESTINY'S CHILD"],
+        ["BIG COUNTRY", "SIMPLE MINDS"],
+        ["BLACK SABBATH", "BLUE"],
+        ["BLACK SABBATH", "DEEP PURPLE"],
+        ["BLACK SABBATH", "ELECTRIC LIGHT ORCHESTRA"],
+        ["BLACK SABBATH", "FLEETWOOD MAC"],
+        ["BLACK SABBATH", "JETHRO TULL"],
+        ["BLIND FAITH", "CREAM"],
+        ["BLIND FAITH", "ERIC CLAPTON"],
+        ["BOB DYLAN", "TRAVELING WILBURYS"],
+        ["BONEY M", "ENIGMA"],
+        ["BOYZONE", "RONAN KEATING"],
+        ["BRANDON FLOWERS", "KILLERS"],
+        ["BRANDON FLOWERS", "THE KILLERS"],
+        ["BRYAN FERRY", "ROXY MUSIC"],
+        ["CREAM", "ERIC CLAPTON"],
+        ["CROWDED HOUSE", "FLEETWOOD MAC"],
+        ["CURE", "JOHNNY HATES JAZZ"],
+        ["D12", "EMINEM"],
+        ["DAVID GILMOUR", "PINK"],
+        ["DAVID GILMOUR", "PINK FLOYD"],
+        ["DEPECHE MODE", "ERASURE"],
+        ["DEPECHE MODE", "YAZOO"],
+        ["DESTINY'S CHILD", "KELLY ROWLAND"],
+        ["ED SHEERAN", "ELBOW"],
+        ["ED SHEERAN", "ONE DIRECTION"],
+        ["ELASTICA", "PULP"],
+        ["ELASTICA", "SUEDE"],
+        ["ELBOW", "ELLIE GOULDING"],
+        ["ELBOW", "OLLY MURS"],
+        ["ELBOW", "ONE DIRECTION"],
+        ["ELBOW", "PALOMA FAITH"],
+        ["ELBOW", "RITA ORA"],
+        ["ELBOW", "SAM SMITH"],
+        ["ELECTRIC LIGHT ORCHESTRA", "TRAVELING WILBURYS"],
+        ["ELLIE GOULDING", "ONE DIRECTION"],
+        ["ENEMY", "QUEENS OF THE STONE AGE"],
+        ["ERASURE", "YAZOO"],
+        ["EVANESCENCE", "LIMP BIZKIT"],
+        ["FACES", "FACES"],
+        ["FACES", "FOREIGNER"],
+        ["FACES", "ROLLING STONES"],
+        ["FACES", "SMALL FACES"],
+        ["FACES", "THE ROLLING STONES"],
+        ["FACES", "WHO"],
+        ["FACES", "WINGS"],
+        ["FARM", "GENESIS"],
+        ["FLEETWOOD MAC", "MOODY BLUES"],
+        ["FOO FIGHTERS", "GUNS N' ROSES"],
+        ["FOO FIGHTERS", "NIRVANA"],
+        ["FOO FIGHTERS", "QUEENS OF THE STONE AGE"],
+        ["FOREIGNER", "SIMPLE MINDS"],
+        ["FOREIGNER", "SMALL FACES"],
+        ["FRANKIE GOES TO HOLLYWOOD", "HOLLY JOHNSON"],
+        ["GARY BARLOW", "TAKE THAT"],
+        ["GARY NUMAN", "TUBEWAY ARMY"],
+        ["GENESIS", "PETER GABRIEL"],
+        ["GENESIS", "PHIL COLLINS"],
+        ["GEORGE HARRISON", "TRAVELING WILBURYS"],
+        ["GEORGE MICHAEL", "WHAM!"],
+        ["GORILLAZ", "JAMIROQUAI"],
+        ["HARRY STYLES", "ONE DIRECTION"],
+        ["IRON MAIDEN", "KILLERS"],
+        ["JACK WHITE", "WHITE STRIPES"],
+        ["JAM", "QUEENS OF THE STONE AGE"],
+        ["JAM", "RED HOT CHILI PEPPERS"],
+        ["JETHRO TULL", "ROXY MUSIC"],
+        ["JOHNNY HATES JAZZ", "THE CURE"],
+        ["LIAM GALLAGHER", "OASIS"],
+        ["LOUIS TOMLINSON", "ONE DIRECTION"],
+        ["MOODY BLUES", "WINGS"],
+        ["MOODY BLUES", "YES"],
+        ["MORRISSEY", "SMITHS"],
+        ["MUPPETS", "SCOOTER"],
+        ["NIALL HORAN", "ONE DIRECTION"],
+        ["NIRVANA", "QUEENS OF THE STONE AGE"],
+        ["NOEL GALLAGHER'S HIGH FLYING", "OASIS"],
+        ["NOEL GALLAGHER'S HIGH FLYING BIRDS", "OASIS"],
+        ["OCEAN COLOUR SCENE", "STYLE COUNCIL"],
+        ["OLETA ADAMS", "TEARS FOR FEARS"],
+        ["OLLY MURS", "ONE DIRECTION"],
+        ["ONE DIRECTION", "PALOMA FAITH"],
+        ["ONE DIRECTION", "RITA ORA"],
+        ["ONE DIRECTION", "SAM SMITH"],
+        ["ONE DIRECTION", "ZAYN"],
+        ["PAUL MCCARTNEY", "WINGS"],
+        ["PAUL SIMON", "SIMON & GARFUNKEL"],
+        ["PAUL WELLER", "STYLE COUNCIL"],
+        ["POLICE", "STING"],
+        ["PRETENDERS", "SIMPLE MINDS"],
+        ["PRETENDERS", "SMITHS"],
+        ["QUEEN", "QUEEN + ADAM LAMBERT"],
+        ["RICHARD ASHCROFT", "VERVE"],
+        ["RICK WAKEMAN", "YES"],
+        ["ROBBIE WILLIAMS", "TAKE THAT"],
+        ["ROY ORBISON", "TRAVELING WILBURYS"],
+        ["SIMPLE MINDS", "SIMPLY RED"],
+        ["SKY", "T. REX"],
+        ["SMALL FACES", "WHO"],
+        ["SMALL FACES", "WINGS"]
+      ];
+    const weeksData = [
   {
     "week": "1956 Week 30",
     "albums": [
@@ -7116,7 +7884,7 @@
       {
         "name": "OGDEN'S NUT GONE FLAKE",
         "artist": "SMALL FACES",
-        "genre": "Jazz",
+        "genre": "Rock",
         "collabs": {}
       }
     ]
@@ -7127,7 +7895,7 @@
       {
         "name": "OGDEN'S NUT GONE FLAKE",
         "artist": "SMALL FACES",
-        "genre": "Jazz",
+        "genre": "Rock",
         "collabs": {}
       }
     ]
@@ -7138,7 +7906,7 @@
       {
         "name": "OGDEN'S NUT GONE FLAKE",
         "artist": "SMALL FACES",
-        "genre": "Jazz",
+        "genre": "Rock",
         "collabs": {}
       }
     ]
@@ -7149,7 +7917,7 @@
       {
         "name": "OGDEN'S NUT GONE FLAKE",
         "artist": "SMALL FACES",
-        "genre": "Jazz",
+        "genre": "Rock",
         "collabs": {}
       }
     ]
@@ -7160,7 +7928,7 @@
       {
         "name": "OGDEN'S NUT GONE FLAKE",
         "artist": "SMALL FACES",
-        "genre": "Jazz",
+        "genre": "Rock",
         "collabs": {}
       }
     ]
@@ -7171,7 +7939,7 @@
       {
         "name": "OGDEN'S NUT GONE FLAKE",
         "artist": "SMALL FACES",
-        "genre": "Jazz",
+        "genre": "Rock",
         "collabs": {}
       }
     ]
@@ -9883,7 +10651,7 @@
       {
         "name": "OOH-LA-LA",
         "artist": "FACES",
-        "genre": "Jazz",
+        "genre": "Rock",
         "collabs": {}
       }
     ]
@@ -40034,6 +40802,7 @@
     ]
   }
 ]; 
+    
     let width = window.innerWidth;
     let height = window.innerHeight - document.getElementById('controls').offsetHeight - 50;
 
@@ -40071,6 +40840,25 @@
     const timeline = d3.select("#timeline");
     const weekLabel = d3.select("#weekLabel");
     const legend = d3.select("#legend");
+    const showCollabsCheckbox = d3.select("#showCollabs");
+    const showSharedMembersCheckbox = d3.select("#showSharedMembers");
+
+    let showCollabs = localStorage.getItem("showCollabs") !== "false"; // default true
+    let showSharedMembers = localStorage.getItem("showSharedMembers") !== "false"; // default true
+
+    showCollabsCheckbox.property("checked", showCollabs);
+    showSharedMembersCheckbox.property("checked", showSharedMembers);
+
+    showCollabsCheckbox.on("change", function() {
+      showCollabs = this.checked;
+      localStorage.setItem("showCollabs", showCollabs ? "true" : "false");
+      updateGraph();
+    });
+    showSharedMembersCheckbox.on("change", function() {
+      showSharedMembers = this.checked;
+      localStorage.setItem("showSharedMembers", showSharedMembers ? "true" : "false");
+      updateGraph();
+    });
 
     svg.append("rect")
         .attr("width", width)
@@ -40109,6 +40897,10 @@
     const container = svg.append("g");
     const linkGroup = container.append("g").attr("class", "links");
     const nodeGroup = container.append("g").attr("class", "nodes");
+
+    let linkSel = linkGroup.selectAll("line");
+    let nodeSel = nodeGroup.selectAll("path");
+    let lastRender = 0;
 
   const initialScale = 0.4;  
   const initialTranslate = [width / 3.4, height / 4]; 
@@ -40163,23 +40955,30 @@
     let currentWeekIndex = 0;
     let playing = false;
     let timer = null;
+    let endTimeout = null;
 
     timeline.attr("max", weeksData.length - 1);
 
     simulation = d3.forceSimulation()
-        .force("link", d3.forceLink().id(d => d.id).distance(150).strength(0.05))
-        .force("charge", d3.forceManyBody().strength(d => -1200 - d.totalWeeks * 25))
-        .force("pullCenter", d3.forceRadial(0, width / 2, height / 2).strength(d => 0.07 + ((d.year - 1956) * 0.007)))
-        .force("genreLink", d3.forceLink().id(d => d.id).distance(450).strength(d => 0.03 * d.weight))
+        .velocityDecay(0.5)
+        .force("link", d3.forceLink().id(d => d.id).distance(150).strength(0.1))
+        .force("charge", d3.forceManyBody().strength(d => -1200 - d.totalWeeks * 35))
+        .force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 15).strength(0.5))
+        .force("pullCenter", d3.forceRadial(0, width / 2, height / 2).strength(d => 0.07 + ((d.year - 1956) * 0.005)))
+        .force("genreLink", d3.forceLink().id(d => d.id).distance(450).strength(d => 0.03))
         .on("tick", () => {
-            linkGroup.selectAll("line")
-            .attr("x1", d => d.source.x)
-            .attr("y1", d => d.source.y)
-            .attr("x2", d => d.target.x)
-            .attr("y2", d => d.target.y);
+        const now = performance.now();
+        if (now - lastRender < 16) return; 
+        lastRender = now;
 
-            nodeGroup.selectAll("path")
-            .attr("transform", d => `translate(${d.x},${d.y})`);
+        linkSel
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+        nodeSel
+          .attr("transform", d => `translate(${d.x},${d.y})`);
         });
 
     const sidePanel = d3.select("#sidePanel");
@@ -40200,13 +40999,32 @@
         if (albums != "")
           sidePanel.select("#panelAlbums").html(albums.slice(0, -5));
         sidePanel.select("#panelTotalWeeks").text(artist.totalWeeks);
+
+        let collabs = "";
+        let sharedMembers = "";
+        const connectedLinks = links.filter(l => l.source.id === artist.id || l.target.id === artist.id);
+        
+        connectedLinks.forEach(l => {
+            const otherId = l.source.id === artist.id ? l.target.id : l.source.id;
+            if (l.type === 'collab') {
+                collabs += `${otherId}<br/>`;
+            } else if (l.type === 'sharedMember') {
+                sharedMembers += `${otherId}<br/>`;
+            }
+        });
+        
+        if (collabs === "") collabs = "None";
+        if (sharedMembers === "") sharedMembers = "None";
+        
+        sidePanel.select("#panelCollabs").html(collabs);
+        sidePanel.select("#panelSharedMembers").html(sharedMembers);
     }
 
     function closeSidePanel() {
         sidePanel.style("transform", "translateX(100%)");
     }
       function nodeShape(albumCount) {
-        if (albumCount === 1) {
+        if (albumCount <= 1) {
           return d3.symbolCircle;
         }
 
@@ -40318,12 +41136,21 @@
     }
 
     function updateGraph() {
-        const linkSelection = linkGroup.selectAll("line")
+      const degree = new Map();
+      for (const l of links) {
+        const s = l.source.id, t = l.target.id;
+        degree.set(s, (degree.get(s) || 0) + 1);
+        degree.set(t, (degree.get(t) || 0) + 1);
+      }
+      const linkSelection = linkGroup.selectAll("line")
             .data(links, d => d.source.id + "-" + d.target.id);
+
+        linkSelection.interrupt();
 
         linkSelection.exit()
             .transition()
-            .duration(800)
+            .duration(150)
+            .attr("stroke-width", 0)
             .attr("stroke-opacity", 0)
             .remove();
 
@@ -40331,17 +41158,34 @@
             .append("line")
             .attr("class", "link")
             .attr("stroke-width", 0)
-            .attr("stroke-opacity", 0);
+          .attr("stroke-opacity", 0);
 
         const linkMerge = linkEnter.merge(linkSelection);
 
-        linkMerge.transition()
-            .duration(400)
-            .attr("stroke-width", d => Math.sqrt(d.weight))
-            .attr("stroke-opacity", 0.6);
+        linkMerge
+          .style("display", d => {
+            if (d.type === 'collab' && !showCollabs) return "none";
+            if (d.type === 'sharedMember' && !showSharedMembers) return "none";
+            return null;
+          })
+      .on("click", (event, d) => {
+        const ds = degree.get(d.source.id) || 0;
+        const dt = degree.get(d.target.id) || 0;
+        const chosen = ds >= dt ? d.source : d.target;
+        zoomToNode(chosen);
+      })
+          .attr("stroke-width", d => Math.max(4, Math.sqrt(d.weight) * 4))
+          .attr("stroke", d => {
+              if (d.type === 'collab') return "#000000";
+              if (d.type === 'sharedMember') return "#ffffff";
+              return "#bbb";
+          })
+          .attr("stroke-opacity", 1);
 
         const nodeSelection = nodeGroup.selectAll("path")
             .data(nodes, d => d.id);
+
+        nodeSelection.interrupt();
 
         nodeSelection.exit()
             .transition()
@@ -40417,11 +41261,14 @@
             })
             .attr("fill", d => colourDict[d.genre]);
 
+        linkSel = linkMerge;
+        nodeSel = nodeMerge;
+
         simulation.nodes(nodes);
         simulation.force("link").links(links);
         simulation.force("genreLink").links(genreLinks);
         
-        simulation.alphaTarget(0.3).restart();
+        simulation.alpha(0.6).restart();
     }
 
     function highlightConnections(artistId) {
@@ -40429,7 +41276,7 @@
             .classed("highlighted", d => d.source.id === artistId || d.target.id === artistId)
             .transition()
             .duration(600)
-            .attr("stroke-width", d => (d.source.id === artistId || d.target.id === artistId) ? Math.sqrt(d.weight) * 3 : Math.sqrt(d.weight))
+            .attr("stroke-width", d => (d.source.id === artistId || d.target.id === artistId) ? Math.max(6, Math.sqrt(d.weight) * 6) : Math.max(4, Math.sqrt(d.weight) * 4))
             .attr("stroke-opacity", d => (d.source.id === artistId || d.target.id === artistId) ? 1 : 0.3);
         nodeGroup.selectAll("path")
         .classed("highlighted", d => d.id === artistId)
@@ -40444,8 +41291,8 @@
             .classed("highlighted", false)
             .transition()
             .duration(600)
-            .attr("stroke-width", d => Math.sqrt(d.weight))
-            .attr("stroke-opacity", 0.6);
+            .attr("stroke-width", d => Math.max(4, Math.sqrt(d.weight) * 4))
+            .attr("stroke-opacity", 1);
         nodeGroup.selectAll("path")
             .classed("highlighted", false)
             .transition()
@@ -40466,8 +41313,7 @@
 
         linkGroup.selectAll("line")
             .transition()
-            .duration(600)
-            .attr("stroke-width", 0)
+            .duration(800)
             .attr("stroke-opacity", 0)
             .remove();
 
@@ -40489,21 +41335,10 @@
             clearInterval(timer);
             timer = null;
 
-            setTimeout(() => {
-                if (playing) {
-                resetDataAndClearGraph();
-
-                setTimeout(() => {
-                    currentWeekIndex = 0;
-                    updateForWeek(currentWeekIndex);
-
-                    if (playing && !timer) {
-                    timer = setInterval(advanceWeek, 200 - speed);
-                    }
-                }, 1000);
-
-                }
-            }, 15000);
+        if (endTimeout) {
+          clearTimeout(endTimeout);
+          endTimeout = null;
+        }
 
             return;
         }
@@ -40551,7 +41386,7 @@
             artistsMap.set(artistId, artist);
           }
 
-          if (!albumsMap.has(album.name)) {
+          if (!albumsMap.has(album.name) || albumsMap.get(album.name) !== album.artist) {
             albumsMap.set(album.name, album.artist);
             const artist = artistsMap.get(artistId);
             artist.no1Albums = (artist.no1Albums || 0) + 1;
@@ -40562,7 +41397,7 @@
           artist.totalWeeks = (artist.totalWeeks || 0) + 1;
         });
       }
-
+      
       nodes = Array.from(artistsMap.values()).map(a => {
         if (a.x === undefined || a.y === undefined) {
           a.x = width / 2 + (Math.random() - 0.5) * 200; 
@@ -40572,39 +41407,78 @@
       });
 
       genreLinks = [];
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const a = nodes[i], b = nodes[j];
-          if (a.genre === b.genre) {
-            const count = genreCounts.get(a.genre) || 1;
-            genreLinks.push({
-              source: a,
-              target: b,
-              weight: count > 20 ? 10 / count : 50 / count
-            });
-          }
+      const genreToNodes = new Map();
+      for (const n of nodes) {
+        const arr = genreToNodes.get(n.genre) || [];
+        arr.push(n);
+        genreToNodes.set(n.genre, arr);
+      }
+      for (const [genre, arr] of genreToNodes.entries()) {
+        if (arr.length <= 1) continue;
+        const count = genreCounts.get(genre) || 1;
+        const w = count > 20 ? 10 / count : 50 / count;
+        const hub = arr.reduce((a, b) => ((a.totalWeeks || 0) >= (b.totalWeeks || 0)) ? a : b);
+        for (const n of arr) {
+          if (n === hub) continue;
+          genreLinks.push({ source: hub, target: n, weight: w });
         }
       }
 
-      const collabCounts = new Map();
+      const linkMap = new Map();
+
       for (let i = 0; i <= weekIndex; i++) {
         weeksData[i].albums.forEach(album => {
           const a = album.artist;
           Object.entries(album.collabs || {}).forEach(([b, c]) => {
             if (!artistsMap.has(a) || !artistsMap.has(b)) return;
             const key = [a, b].sort().join("||");
-            collabCounts.set(key, (collabCounts.get(key) || 0) + c);
+            if (!linkMap.has(key)) {
+                linkMap.set(key, { weight: 0, type: 'default' });
+            }
+            const link = linkMap.get(key);
+            link.weight += c;
           });
         });
       }
 
+    collabData.forEach(pair => {
+        const [a, b] = pair;
+        if (artistsMap.has(a) && artistsMap.has(b)) {
+            const key = [a, b].sort().join("||");
+            if (!linkMap.has(key)) {
+                linkMap.set(key, { weight: 0, type: 'collab' });
+            }
+            const link = linkMap.get(key);
+            link.weight += 1;
+            if (link.type === 'default') link.type = 'collab';
+        }
+    });
+
+    sharedMemberData.forEach(pair => {
+        const [a, b] = pair;
+        if (artistsMap.has(a) && artistsMap.has(b)) {
+            const key = [a, b].sort().join("||");
+            if (!linkMap.has(key)) {
+                linkMap.set(key, { weight: 0, type: 'sharedMember' });
+            }
+            const link = linkMap.get(key);
+            link.weight += 1;
+            if (link.type === 'default') link.type = 'sharedMember';
+        }
+    });
+
       links = [];
-      for (const [key, weight] of collabCounts.entries()) {
+      for (const [key, data] of linkMap.entries()) {
         const [sourceId, targetId] = key.split("||");
         const sourceNode = artistsMap.get(sourceId);
         const targetNode = artistsMap.get(targetId);
         if (sourceNode && targetNode) {
-          links.push({ source: sourceNode, target: targetNode, weight });
+          links.push({ 
+              source: sourceNode, 
+              target: targetNode, 
+              weight: Math.max(1, data.weight),
+              type: data.type 
+          });
         }
       }
 
@@ -40625,12 +41499,12 @@
           .html("<strong>About this Visualisation:</strong>")
           .style("font-weight", "600")
           .style("margin-bottom", "5px")
-          .style("margin-top", "55px")
+          .style("margin-top", "60px")
           .style("color", "#eee")
           .style("font-size", "17px");
       
       bio.append("div")
-          .html("This visualation simulates UK #1 album artists from 1956 to 2025. <br/>Nodes represent artists, coloured by genre, sized by the number<br/>of weeks they've charted and shaped by their number of #1<br/>albums.")
+          .html("This visualation simulates UK #1 album artists from 1956 to 2025. <br/>Nodes represent artists, coloured by genre, sized by the number<br/>of weeks they've charted and shaped by their number of #1<br/>albums. Links indicate collaborations (black) and shared band<br/>members (white). Use the controls to explore the data!")
           .style("font-weight", "400")
           .style("margin-bottom", "10px")
           .style("color", "#ccc")
@@ -40646,7 +41520,7 @@
 
           
       controlLegend.append("div")
-          .html("&#8226 Hover over nodes for details.<br/>&#8226 Click nodes to focus them.<br/>&#8226 Click and drag nodes to move them. <br/>&#8226 Click background to reset view.")
+          .html("&#8226 Hover over nodes for details.<br/>&#8226 Click nodes to focus them.<br/>&#8226 Click and drag nodes to move them. <br/>&#8226 Click background to reset view.<br/>&#8226 Click links to focus the most-connected artist of the pair.")
           .style("font-weight", "400")
           .style("margin-bottom", "10px")
           .style("color", "#ccc")
@@ -40666,6 +41540,36 @@
           .style("margin-bottom", "10px")
           .style("color", "#ccc")
           .style("font-size", "12px");
+      
+      const linkLegend = legend.append("div").style("margin-top", "0px");
+      linkLegend.append("div")
+          .html("Link Types:")
+          .style("font-weight", "600")
+          .style("margin-bottom", "5px")
+          .style("color", "#eee")
+          .style("font-size", "17px");
+      const linkTypes = [
+          { label: "Artist Collaboration", color: "#000000" },
+          { label: "Shared Band Members", color: "#ffffff" }
+      ];
+      linkTypes.forEach(lt => {
+          const item = linkLegend.append("div").attr("class", "legend-item");
+
+          item.append("svg")
+              .attr("class", "legend-symbol")
+              .attr("viewBox", "0 0 20 20")
+              .attr("width", 22)
+              .attr("height", 22)
+              .append("line")
+              .attr("x1", 1)
+              .attr("y1", 10)
+              .attr("x2", 19)
+              .attr("y2", 10)
+              .attr("stroke", lt.color)
+              .attr("stroke-width", 4);
+
+          item.append("div").text(lt.label);
+      });
 
       function polygonSymbol(sides) {
           return {
@@ -40691,7 +41595,7 @@
           { label: "5+ #1 Albums",   symbol: polygonSymbol(6) }
       ];
 
-      const shapeLegend = legend.append("div");
+        const shapeLegend = legend.append("div");
       shapeLegend.append("div")
           .html("Node Shapes (Number of #1 Albums):")
           .style("font-weight", "600")
@@ -40708,25 +41612,34 @@
           .style("color", "#ccc")
           .style("font-size", "12px");
 
-      shapes.forEach(s => {
-          const item = shapeLegend.append("div").attr("class", "legend-item");
+        const shapeGrid = shapeLegend.append("div")
+          .style("display", "grid")
+          .style("grid-template-columns", "1fr 1fr")
+          .style("column-gap", "10px");
+
+        const leftCol = shapeGrid.append("div");
+        const rightCol = shapeGrid.append("div");
+
+        shapes.forEach((s, idx) => {
+          const parent = idx < 3 ? leftCol : rightCol; 
+          const item = parent.append("div").attr("class", "legend-item");
 
           const symbolPath = d3.symbol().type(s.symbol).size(280)();
 
           const svgEl = item.append("svg")
-              .attr("class", "legend-symbol")
-              .attr("viewBox", "-10 -10 20 20")
-              .attr("width", 22)
-              .attr("height", 22);
+            .attr("class", "legend-symbol")
+            .attr("viewBox", "-10 -10 20 20")
+            .attr("width", 22)
+            .attr("height", 22);
 
           svgEl.append("path")
-              .attr("d", symbolPath)
-              .attr("fill", "#888")
-              .attr("stroke", "#eee")
-              .attr("stroke-width", 1.5);
+            .attr("d", symbolPath)
+            .attr("fill", "#888")
+            .attr("stroke", "#eee")
+            .attr("stroke-width", 1.5);
 
           item.append("div").text(s.label);
-      });
+        });
 
       const colorLegend = legend.append("div").style("margin-top", "5px");
       colorLegend.append("div")
@@ -40738,7 +41651,7 @@
 
       const colorGrid = colorLegend.append("div")
           .style("display", "grid")
-          .style("grid-template-columns", "1fr 1fr")
+          .style("grid-template-columns", "1fr 1fr 1fr")
           .style("column-gap", "10px");
 
       Object.keys(colourDict).forEach(genre => {
@@ -40781,6 +41694,7 @@
             clearInterval(timer);
             timer = null;
             }
+        if (endTimeout) { clearTimeout(endTimeout); endTimeout = null; }
         } else {
             playing = true;
             playPauseBtn.text("Pause");
@@ -40792,57 +41706,20 @@
 
     timeline.on("input", function() {
       const idx = +this.value;
-      let forwards = false;
-      let previouslyPlaying = playing;
-      if (idx > currentWeekIndex) {
-        forwards = true;
-      }
+      
       if (timer) {
         clearInterval(timer);
         timer = null;
-        playing = false;
-        playPauseBtn.text("Play");
       }
+      if (endTimeout) {
+        clearTimeout(endTimeout);
+        endTimeout = null;
+      }
+      
+      playing = false;
+      playPauseBtn.text("Play");
+      
       updateForWeek(idx, true);
-      if (forwards) {
-        playing = true;
-        if (previouslyPlaying) {
-          playPauseBtn.text("Pause");
-        }
-        if (playing && !timer) {
-          timer = setInterval(advanceWeek, 30);
-        }
-        setTimeout(() => {
-          if (!previouslyPlaying) {
-            playing = false;
-            playPauseBtn.text("Play");
-            if (timer) {
-              clearInterval(timer);
-              timer = null;
-            }
-          }
-        }, 1500);
-      } else {
-        playing = true;
-        if (previouslyPlaying) {
-          playPauseBtn.text("Pause");
-        }
-        setTimeout(() => {
-          if (playing && !timer) {
-            timer = setInterval(advanceWeek, 30);
-          }
-        }, 1500);
-        setTimeout(() => {
-          if (!previouslyPlaying) {
-            playing = false;
-            playPauseBtn.text("Play");
-            if (timer) {
-              clearInterval(timer);
-              timer = null;
-            }
-          }
-        }, 1500);
-      }
     });
 
     artistsMap = new Map();
@@ -40850,15 +41727,794 @@
     drawLegend();
     updateForWeek(0);
 
+collabFound = new Set();
+function hasCollaborations(name, artists) {
+  for (const [a1, a2] of collabData){
+    if (a1 === name && artists.has(a2)) {
+      collabFound.add(name);
+      if (!collabFound.has(a2)) {
+        collabFound.add(a2);
+        return 2;
+      }
+      return 1;
+    }
+    if (a2 === name && artists.has(a1)) {
+      collabFound.add(name);
+      if (!collabFound.has(a1)) {
+        collabFound.add(a1);
+        return 2;
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+sharedFound = new Set();
+function hasShared(name, artists) {
+  for (const [a1, a2] of sharedMemberData){
+    if (a1 === name && artists.has(a2)) {
+      sharedFound.add(name);
+      if (!sharedFound.has(a2)) {
+        sharedFound.add(a2);
+        return 2;
+      }
+      return 1;
+    }
+    if (a2 === name && artists.has(a1)) {
+      sharedFound.add(name);
+      if (!sharedFound.has(a1)) {
+        sharedFound.add(a1);
+        return 2;
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+function yearFromWeekLabel(label) {
+  return label.substring(0, 4);
+}
+
+let years_list = [];
+let uniqueGenresPerYear = {};
+let rockGenreCountPerYear = {};
+let popGenreCountPerYear = {};
+let otherGenreCountPerYear = {};
+let artistsPerYear = {};
+let albumsPerYear = {};
+let debutArtistsPerYear = {};
+let artists = new Set();
+let cumulativeArtists = {}
+let cumulativeArtistsRock = {}
+let cumulativeArtistsOther = {}
+let collabArtists = {};
+let sharedArtists = {};
+let collabArtistsRock = {};
+let sharedArtistsRock = {};
+let collabArtistsOther = {};
+let sharedArtistsOther = {};
+
+weeksData.forEach(weekObj => {
+  const year = yearFromWeekLabel(weekObj.week);
+  if (!years_list.includes(year) && year !== "2025" && parseInt(year) > 1968) {
+    years_list.push(year);
+    uniqueGenresPerYear[year] = new Set();
+    rockGenreCountPerYear[year] = 0;
+    popGenreCountPerYear[year] = 0;
+    otherGenreCountPerYear[year] = 0;
+    collabArtists[year] = 0;
+    sharedArtists[year] = 0;
+    collabArtistsRock[year] = 0;
+    collabArtistsOther[year] = 0;
+    sharedArtistsRock[year] = 0;
+    sharedArtistsOther[year] = 0;
+    debutArtistsPerYear[year] = 0;
+    cumulativeArtists[year] = 0;
+    cumulativeArtistsRock[year] = 0;
+    cumulativeArtistsOther[year] = 0;
+    artistsPerYear[year] = new Set();
+    albumsPerYear[year] = new Set();
+  }
+});
+
+weeksData.forEach(weekObj => {
+  const year = yearFromWeekLabel(weekObj.week);
+  if (year !== "2025" && parseInt(year) > 1968) {
+    weekObj.albums.forEach(album => {
+      if (album.genre !== "Unknown | N/a") {
+        uniqueGenresPerYear[year].add(album.genre);
+
+        if (album.genre === "Rock") {
+          rockGenreCountPerYear[year] += 1;
+        } else if (album.genre === "Pop") {
+          popGenreCountPerYear[year] += 1;
+        } else {
+          otherGenreCountPerYear[year] += 1;
+        }
+
+        artistsPerYear[year].add(album.artist);
+        albumsPerYear[year].add(album.name);
+        if (!artists.has(album.artist) && parseInt(year) > 1967) {
+          debutArtistsPerYear[year] += 1;
+          cumulativeArtists[year] += 1;
+          artists.add(album.artist);
+          collabArtists[year] += hasCollaborations(album.artist, artists);
+          sharedArtists[year] += hasShared(album.artist, artists);
+          if (album.genre === "Rock") {
+            collabArtistsRock[year] += hasCollaborations(album.artist, artists);
+            sharedArtistsRock[year] += hasShared(album.artist, artists);
+            cumulativeArtistsRock[year] += 1;
+          } else if (album.genre === "Pop" || album.genre === "Hip-Hop"){
+            collabArtistsOther[year] += hasCollaborations(album.artist, artists);
+            sharedArtistsOther[year] += hasShared(album.artist, artists);
+            cumulativeArtistsOther[year] += 1;
+          }
+        }
+      } else {
+        artistsPerYear[year].add(album.name);
+        albumsPerYear[year].add(album.name);
+      }
+    });
+  }
+});
+
+let maxWeeksPerArtistPerYear = {};
+
+years_list.forEach(year => {
+  maxWeeksPerArtistPerYear[year] = 0;
+});
+
+let artistWeeksPerYear = {};
+
+weeksData.forEach(weekObj => {
+  const year = yearFromWeekLabel(weekObj.week);
+  if (year !== "2025" && parseInt(year) > 1968) {
+    
+    if (!artistWeeksPerYear[year]) {
+      artistWeeksPerYear[year] = {};
+    }
+    
+    weekObj.albums.forEach(album => {
+      if (album.genre !== "Unknown | N/a") {
+        const artistName = album.artist;
+        
+        if (!artistWeeksPerYear[year][artistName]) {
+          artistWeeksPerYear[year][artistName] = 0;
+        }
+        
+        artistWeeksPerYear[year][artistName] += 1;
+      }
+    });
+  }
+});
+
+Object.keys(artistWeeksPerYear).forEach(year => {
+  const artistWeeks = artistWeeksPerYear[year];
+  const maxWeeks = Math.max(...Object.values(artistWeeks));
+  maxWeeksPerArtistPerYear[year] = maxWeeks / 52 * 100;
+});
+
+
+let maxWeeksPerAlbumPerYear = {};
+
+years_list.forEach(year => {
+  maxWeeksPerAlbumPerYear[year] = 0;
+});
+
+let AlbumWeeksPerYear = {};
+
+weeksData.forEach(weekObj => {
+  const year = yearFromWeekLabel(weekObj.week);
+  if (year !== "2025" && parseInt(year) > 1968) {
+    
+    if (!AlbumWeeksPerYear[year]) {
+      AlbumWeeksPerYear[year] = {};
+    }
+    
+    weekObj.albums.forEach(album => {
+        const AlbumName = album.name;
+        
+        if (!AlbumWeeksPerYear[year][AlbumName]) {
+          AlbumWeeksPerYear[year][AlbumName] = 0;
+        }
+        
+        AlbumWeeksPerYear[year][AlbumName] += 1;
+      
+    });
+  }
+});
+
+Object.keys(AlbumWeeksPerYear).forEach(year => {
+  const AlbumWeeks = AlbumWeeksPerYear[year];
+  const maxWeeks = Math.max(...Object.values(AlbumWeeks));
+  maxWeeksPerAlbumPerYear[year] = maxWeeks / 52 * 100;
+});
+
+const sortedYears = Object.keys(collabArtists).sort();
+
+let prevArt = 0;
+let p1 = 0;
+let p2 = 0;
+for (const year of sortedYears) {
+  cumulativeArtists[year] += prevArt;
+  prevArt = cumulativeArtists[year];
+  cumulativeArtistsRock[year] += p1;
+  p1 = cumulativeArtistsRock[year];
+  cumulativeArtistsOther[year] += p2;
+  p2 = cumulativeArtistsOther[year];
+}
+
+let prev1 = 0;
+let prev2 = 0;
+let prev3 = 0;
+for (const year of sortedYears) {
+  collabArtists[year] += prev1;
+  prev1 = collabArtists[year];
+  collabArtistsRock[year] += prev2;
+  prev2 = collabArtistsRock[year];
+  collabArtistsOther[year] += prev3;
+  prev3 = collabArtistsOther[year];
+  collabArtists[year] = collabArtists[year] / cumulativeArtists[year] * 100;
+  collabArtistsRock[year] = collabArtistsRock[year] / cumulativeArtistsRock[year] * 100;
+  collabArtistsOther[year] = collabArtistsOther[year] / cumulativeArtistsOther[year] * 100;
+}
+
+prev1 = 0;
+prev2 = 0;
+prev3 = 0;
+for (const year of sortedYears) {
+  sharedArtists[year] += prev1;
+  prev1 = sharedArtists[year];
+  sharedArtistsRock[year] += prev2;
+  prev2 = sharedArtistsRock[year];
+  sharedArtistsOther[year] += prev3;
+  prev3 = sharedArtistsOther[year];
+  sharedArtists[year] = sharedArtists[year] / cumulativeArtists[year] * 100;
+  sharedArtistsRock[year] = sharedArtistsRock[year] / cumulativeArtistsRock[year] * 100;
+  sharedArtistsOther[year] = sharedArtistsOther[year] / cumulativeArtistsOther[year] * 100;
+}
+
+let averageWeeksPerAlbumPerYear = {};
+for (const [year, set] of Object.entries(albumsPerYear)) {
+  if (parseInt(year) > 1967) {
+    averageWeeksPerAlbumPerYear[year] = 1 / set.size * 100;
+  }
+}
+
+let averageWeeksPerArtistPerYear = {};
+for (const [year, set] of Object.entries(artistsPerYear)) {
+  if (parseInt(year) > 1967) {
+    averageWeeksPerArtistPerYear[year] = 1 / set.size * 100;
+  }
+}
+
+let numAlbumsPerYear = {};
+for (const [year, set] of Object.entries(albumsPerYear)) {
+  numAlbumsPerYear[year] = set.size;
+}
+
+let numArtistsPerYear = {};
+for (const [year, set] of Object.entries(artistsPerYear)) {
+  numArtistsPerYear[year] = set.size;
+}
+
+function linearRegression(yearValueDict) {
+  const points = Object.entries(yearValueDict).map(([year, value]) => ({
+    year: parseInt(year),
+    value: value
+  }));
+  
+  const n = points.length;
+  if (n === 0) return { slope: 0, intercept: 0 };
+  
+  const sumX = d3.sum(points, d => d.year);
+  const sumY = d3.sum(points, d => d.value);
+  const sumXY = d3.sum(points, d => d.year * d.value);
+  const sumXX = d3.sum(points, d => d.year * d.year);
+  const denom = (n * sumXX - sumX * sumX) || 1;
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
+}
+
+function drawLineChart(container, yearValueDict, opts = {}, title) {
+  const points = Object.entries(yearValueDict).map(([year, value]) => ({
+    year: parseInt(year),
+    value: value
+  }));
+
+  const width = opts.width || 1200, height = opts.height || 520;
+  const margin = { top: 28, right: 14, bottom: 70, left: 70 };
+  const innerW = width - margin.left - margin.right;
+  const innerH = height - margin.top - margin.bottom;
+
+  const svg = d3.create('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .style('background-color', '#4a4a4a');
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const allYears = points.map(p => p.year).sort();
+  const x = d3.scaleLinear().domain(d3.extent(allYears)).range([0, innerW]);
+  const xAxis = d3.axisBottom(x).ticks(Math.min(10, allYears.length)).tickFormat(d3.format('d'));
+  g.append('g').attr('transform', `translate(0,${innerH})`).call(xAxis)
+    .selectAll("text")
+    .attr("transform", "rotate(-45)")
+    .style("text-anchor", "end")
+    .style("fill", "white");
+  g.selectAll('.domain, .tick line').style('stroke', 'white');
+
+  const yMax = d3.max(points, p => p.value) || 1;
+  const y = d3.scaleLinear().domain([0, yMax]).nice().range([innerH, 0]);
+  const yAxis = opts.percent ? d3.axisLeft(y).tickFormat(d3.format('.0%')) : d3.axisLeft(y);
+  g.append('g').call(yAxis)
+    .selectAll("text")
+    .style("fill", "white");
+  g.selectAll('.domain, .tick line').style('stroke', 'white');
+
+  const line = d3.line().x(d => x(d.year)).y(d => y(d.value));
+
+  g.append('path')
+    .datum(points)
+    .attr('fill', 'none')
+    .attr('stroke', opts.color || '#a4edee')
+    .attr('stroke-width', 2)
+    .attr('d', line);
+
+  if (opts.showPoints) {
+    const tooltip = d3.select('body').selectAll('.tooltip').data([null])
+      .join('div')
+      .attr('class', 'tooltip')
+      .style('position', 'absolute')
+      .style('opacity', 0)
+      .style('background', 'rgba(0,0,0,0.8)')
+      .style('color', 'white')
+      .style('padding', '8px')
+      .style('border-radius', '4px')
+      .style('pointer-events', 'none');
+
+    g.selectAll('circle')
+      .data(points)
+      .enter()
+      .append('circle')
+      .attr('cx', d => x(d.year))
+      .attr('cy', d => y(d.value))
+      .attr('r', 4)
+      .attr('fill', opts.color || '#a4edee')
+      .attr('opacity', 0.7)
+      .style('cursor', 'pointer')
+      .on('mouseover', (event, d) => {
+        tooltip.style('opacity', 1)
+          .html(`${d.year}: ${d.value.toFixed(3)}`)
+          .style('left', (event.pageX + 8) + 'px')
+          .style('top', (event.pageY + 8) + 'px');
+      })
+      .on('mouseout', () => tooltip.style('opacity', 0));
+  }
+
+  svg.append('text')
+    .attr('class', 'title')
+    .attr('x', margin.left + innerW / 2)
+    .attr('y', margin.top - 10)
+    .attr('text-anchor', 'middle')
+    .attr('font-weight', 'bold')
+    .attr('fill', 'white')
+    .text(title);
+
+  svg.append('text')
+    .attr('class', 'axis-label')
+    .attr('x', margin.left + innerW / 2)
+    .attr('y', height - 10)
+    .attr('text-anchor', 'middle')
+    .attr('fill', 'white')
+    .text('Year');
+
+  svg.append('text')
+    .attr('class', 'axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('x', - (margin.top + innerH / 2))
+    .attr('y', 20)
+    .attr('text-anchor', 'middle')
+    .attr('fill', 'white')
+    .text(opts.yLabel || '');
+
+  container.appendChild(svg.node());
+}
+
+function drawScatterWithLOBF(container, yearValueDict, opts = {}, title) {
+  const points = Object.entries(yearValueDict).map(([year, value]) => ({
+    year: parseInt(year),
+    value: value
+  }));
+
+  const width = opts.width || 1200, height = opts.height || 520;
+  const margin = { top: 28, right: 14, bottom: 70, left: 70 };
+  const innerW = width - margin.left - margin.right;
+  const innerH = height - margin.top - margin.bottom;
+
+  const svg = d3.create('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .style('background-color', '#4a4a4a');
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const allYears = points.map(p => p.year).sort();
+  const x = d3.scaleLinear().domain(d3.extent(allYears)).range([0, innerW]);
+  const xAxis = d3.axisBottom(x).ticks(Math.min(10, allYears.length)).tickFormat(d3.format('d'));
+  g.append('g').attr('transform', `translate(0,${innerH})`).call(xAxis)
+    .selectAll("text")
+    .attr("transform", "rotate(-45)")
+    .style("text-anchor", "end")
+    .style("fill", "white");
+  g.selectAll('.domain, .tick line').style('stroke', 'white');
+
+  const yMax = d3.max(points, p => p.value) || 1;
+  const y = d3.scaleLinear().domain([0, yMax]).nice().range([innerH, 0]);
+  g.append('g').call(d3.axisLeft(y))
+    .selectAll("text")
+    .style("fill", "white");
+  g.selectAll('.domain, .tick line').style('stroke', 'white');
+
+  const tooltip = d3.select('body').selectAll('.tooltip').data([null])
+    .join('div')
+    .attr('class', 'tooltip')
+    .style('position', 'absolute')
+    .style('opacity', 0)
+    .style('background', 'rgba(0,0,0,0.8)')
+    .style('color', 'white')
+    .style('padding', '8px')
+    .style('border-radius', '4px')
+    .style('pointer-events', 'none');
+
+  g.selectAll('circle')
+    .data(points)
+    .enter()
+    .append('circle')
+    .attr('cx', d => x(d.year))
+    .attr('cy', d => y(d.value))
+    .attr('r', 4)
+    .attr('fill', '#a4edee')
+    .style('cursor', 'pointer')
+    .on('mouseover', (event, d) => {
+      const valueDisplay = opts.isInteger ? d.value.toFixed(0) : d.value.toFixed(2);
+      tooltip.style('opacity', 1)
+        .html(`${d.year}: ${valueDisplay}`)
+        .style('left', (event.pageX + 8) + 'px')
+        .style('top', (event.pageY + 8) + 'px');
+    })
+    .on('mouseout', () => tooltip.style('opacity', 0));
+
+  const lr = linearRegression(yearValueDict);
+  const x1 = d3.min(allYears), x2 = d3.max(allYears);
+  const y1 = lr.slope * x1 + lr.intercept;
+  const y2 = lr.slope * x2 + lr.intercept;
+
+  g.append('line')
+    .attr('x1', x(x1)).attr('y1', y(y1))
+    .attr('x2', x(x2)).attr('y2', y(y2))
+    .attr('stroke', 'red')
+    .attr('stroke-width', 3)
+    .attr('stroke-dasharray', '4,3');
+
+  const slopeText = `LLoBF Gradient: ${lr.slope.toFixed(3)} per year`;
+  g.append('text')
+    .attr('x', innerW)
+    .attr('y', margin.top - 38)
+    .attr('text-anchor', 'end')
+    .attr('fill', 'white')
+    .attr('font-size', '12px')
+    .attr('font-weight', 'bold')
+    .text(slopeText);
+
+  if (opts.showLegend !== false) {
+    const legend = svg.append('foreignObject')
+      .attr('x', margin.left + 440)
+      .attr('y', height - margin.bottom + 50)
+      .attr('width', innerW)
+      .attr('height', 50)
+      .append('xhtml:div')
+      .style('display', 'flex')
+      .style('flex-wrap', 'wrap')
+      .style('gap', '12px')
+      .style('justify-content', 'center');
+
+    const dataItem = legend.append('xhtml:div')
+      .style('display', 'flex')
+      .style('align-items', 'center')
+      .style('gap', '6px');
+    
+    dataItem.append('xhtml:div')
+      .style('width', '12px')
+      .style('height', '12px')
+      .style('background-color', '#a4edee')
+      .style('border-radius', '50%');
+    
+    dataItem.append('xhtml:span')
+      .style('font-size', '12px')
+      .style('color', 'white')
+      .style('user-select', 'none')
+      .style('-webkit-user-select', 'none')
+      .style('-moz-user-select', 'none')
+      .style('-ms-user-select', 'none')
+      .text('Data Points');
+
+    const lobfItem = legend.append('xhtml:div')
+      .style('display', 'flex')
+      .style('align-items', 'center')
+      .style('gap', '6px');
+    
+    lobfItem.append('xhtml:div')
+      .style('width', '20px')
+      .style('height', '3px')
+      .style('background-color', 'red')
+      .style('background-image', 'repeating-linear-gradient(90deg, red 0, red 4px, transparent 4px, transparent 7px)');
+    
+    lobfItem.append('xhtml:span')
+      .style('font-size', '12px')
+      .style('color', 'white')
+      .style('user-select', 'none')
+      .style('-webkit-user-select', 'none')
+      .style('-moz-user-select', 'none')
+      .style('-ms-user-select', 'none')
+      .text('Linear line of Best Fit');
+  }
+
+  svg.append('text')
+    .attr('class', 'title')
+    .attr('x', margin.left + innerW / 2)
+    .attr('y', margin.top - 10)
+    .attr('text-anchor', 'middle')
+    .attr('font-weight', 'bold')
+    .attr('fill', 'white')
+    .text(title);
+
+  svg.append('text')
+    .attr('class', 'axis-label')
+    .attr('x', margin.left + innerW / 2)
+    .attr('y', height - 10)
+    .attr('text-anchor', 'middle')
+    .attr('fill', 'white')
+    .text('Year');
+
+  svg.append('text')
+    .attr('class', 'axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('x', - (margin.top + innerH / 2))
+    .attr('y', 20)
+    .attr('text-anchor', 'middle')
+    .attr('fill', 'white')
+    .text(opts.yLabel || '');
+
+  container.appendChild(svg.node());
+}
+
+const genreCountDict = {};
+Object.entries(uniqueGenresPerYear).forEach(([year, set]) => {
+  genreCountDict[year] = set.size;
+});
+Object.entries(otherGenreCountPerYear).forEach(([year, set]) => {
+  otherGenreCountPerYear[year] = otherGenreCountPerYear[year] / 52 * 100;
+});
+
+
+drawScatterWithLOBF(document.getElementById('chart1'), averageWeeksPerArtistPerYear, { 
+  yLabel: 'Average % of Year',
+}, "Figure 2: Average Percentage of Year an Artist That Tops the Chart is on Top for, per Year");
+
+drawScatterWithLOBF(document.getElementById('chart10'), maxWeeksPerAlbumPerYear, { 
+  yLabel: '% of Year',
+  isInteger: true
+}, "Figure 3: Maximum Percentage of Year That an Artist Topped the Chart for, per Year");
+
+drawScatterWithLOBF(document.getElementById('chart2'), numArtistsPerYear, { 
+  yLabel: 'Number of Different Artists',
+  isInteger: true
+}, "Figure 8: Number of Different Artists That Topped the Chart, per Year");
+
+
+
+
+drawScatterWithLOBF(document.getElementById('chart3'), averageWeeksPerAlbumPerYear, { 
+  yLabel: 'Average % of Year',
+}, "Figure 4: Average Percentage of Year an Album That Tops the Chart is on Top for, per Year");
+
+drawScatterWithLOBF(document.getElementById('chart11'), maxWeeksPerArtistPerYear, { 
+  yLabel: '% of Year',
+  isInteger: true
+}, "Figure 5: Maximum Percentage of Year That an Album Topped the Chart for, per Year");
+
+drawScatterWithLOBF(document.getElementById('chart4'), numAlbumsPerYear, { 
+  yLabel: 'Number of Different Albums',
+  isInteger: true
+}, "Figure 7: Number of Different Albums That Topped the Chart, per Year");
+
+
+
+drawScatterWithLOBF(document.getElementById('chart5'), genreCountDict, { 
+  yLabel: 'Number of Genres',
+  isInteger: true
+}, "Figure 9: Number of Different Genres That Topped the Chart, per Year");
+
+drawScatterWithLOBF(document.getElementById('chart6'), otherGenreCountPerYear, { 
+  yLabel: '% of Year',
+  isInteger: false
+}, "Figure 10: Percentage of the year a Genre Other Than Rock/Pop Topped the Chart, per Year");
+
+
+
+drawScatterWithLOBF(document.getElementById('chart7'), debutArtistsPerYear, { 
+  yLabel: 'Number of Different Debut Artists',
+  isInteger: true
+}, "Figure 6: Number of Different Artists That Topped the Chart for the First Time, per Year");
+
+
+
+drawLineChart(document.getElementById('chart8'), sharedArtists, { 
+  yLabel: '% of Artists',
+  showPoints: true
+}, "Figure 11: Percentage of Artists That Have a Shared Member With Another Chart Topping Artist, per Year");
+
+
+
+drawLineChart(document.getElementById('chart9'), collabArtists, { 
+  yLabel: '% of Artists',
+  showPoints: true
+}, "Figure 12: Percentage of Artists That Have Collaborated With Another Chart Topping Artist, per Year");
+
+function drawMultiLineChart(container, datasets, opts = {}, title) {
+  
+  const width = opts.width || 1200, height = opts.height || 520;
+  const margin = { top: 28, right: 140, bottom: 70, left: 70 };
+  const innerW = width - margin.left - margin.right;
+  const innerH = height - margin.top - margin.bottom;
+
+  const svg = d3.create('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .style('background-color', '#4a4a4a');
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const allSeries = datasets.map(ds => ({
+    name: ds.name,
+    points: Object.entries(ds.data).map(([year, value]) => ({
+      year: parseInt(year),
+      value: value
+    })).sort((a, b) => a.year - b.year)
+  }));
+
+  const allYears = [...new Set(allSeries.flatMap(s => s.points.map(p => p.year)))].sort((a, b) => a - b);
+  const allValues = allSeries.flatMap(s => s.points.map(p => p.value));
+
+  const x = d3.scaleLinear().domain(d3.extent(allYears)).range([0, innerW]);
+  const xAxis = d3.axisBottom(x).ticks(Math.min(10, allYears.length)).tickFormat(d3.format('d'));
+  g.append('g').attr('transform', `translate(0,${innerH})`).call(xAxis)
+    .selectAll("text")
+    .attr("transform", "rotate(-45)")
+    .style("text-anchor", "end")
+    .style("fill", "white");
+  g.selectAll('.domain, .tick line').style('stroke', 'white');
+
+  const yMax = d3.max(allValues) || 1;
+  const y = d3.scaleLinear().domain([0, yMax]).nice().range([innerH, 0]);
+  const yAxis = opts.percent ? d3.axisLeft(y).tickFormat(d3.format('.0%')) : d3.axisLeft(y);
+  g.append('g').call(yAxis)
+    .selectAll("text")
+    .style("fill", "white");
+  g.selectAll('.domain, .tick line').style('stroke', 'white');
+
+  const colors = opts.colors || ['#a4edee', '#ff6b6b', '#4ecdc4', '#ffe66d', '#95e1d3', '#f38181'];
+  const colorScale = (i) => colors[i % colors.length];
+
+  const line = d3.line().x(d => x(d.year)).y(d => y(d.value));
+
+  const tooltip = d3.select('body').selectAll('.multi-tooltip').data([null])
+    .join('div')
+    .attr('class', 'multi-tooltip')
+    .style('position', 'absolute')
+    .style('opacity', 0)
+    .style('background', 'rgba(0,0,0,0.8)')
+    .style('color', 'white')
+    .style('padding', '8px')
+    .style('border-radius', '4px')
+    .style('pointer-events', 'none');
+
+  allSeries.forEach((series, i) => {
+    const color = colorScale(i);
+
+    g.append('path')
+      .datum(series.points)
+      .attr('fill', 'none')
+      .attr('stroke', color)
+      .attr('stroke-width', 2)
+      .attr('d', line);
+
+    if (opts.showPoints) {
+      g.selectAll(`.points-${i}`)
+        .data(series.points)
+        .enter()
+        .append('circle')
+        .attr('class', `points-${i}`)
+        .attr('cx', d => x(d.year))
+        .attr('cy', d => y(d.value))
+        .attr('r', 4)
+        .attr('fill', color)
+        .attr('opacity', 0.7)
+        .style('cursor', 'pointer')
+        .on('mouseover', (event, d) => {
+          tooltip.style('opacity', 1)
+            .html(`<strong>${series.name}</strong><br/>${d.year}: ${d.value.toFixed(3)}`)
+            .style('left', (event.pageX + 8) + 'px')
+            .style('top', (event.pageY + 8) + 'px');
+        })
+        .on('mouseout', () => tooltip.style('opacity', 0));
+    }
+  });
+
+  const legend = svg.append('g')
+    .attr('transform', `translate(${width - margin.right + 10}, ${margin.top})`);
+
+  allSeries.forEach((series, i) => {
+    const legendRow = legend.append('g')
+      .attr('transform', `translate(0, ${i * 20})`);
+
+    legendRow.append('line')
+      .attr('x1', 0)
+      .attr('x2', 20)
+      .attr('y1', 0)
+      .attr('y2', 0)
+      .attr('stroke', colorScale(i))
+      .attr('stroke-width', 2);
+
+    legendRow.append('text')
+      .attr('x', 25)
+      .attr('y', 4)
+      .attr('fill', 'white')
+      .style('font-size', '12px')
+      .text(series.name);
+  });
+
+  svg.append('text')
+    .attr('class', 'title')
+    .attr('x', margin.left + innerW / 2)
+    .attr('y', margin.top - 10)
+    .attr('text-anchor', 'middle')
+    .attr('font-weight', 'bold')
+    .attr('fill', 'white')
+    .text(title);
+
+  svg.append('text')
+    .attr('class', 'axis-label')
+    .attr('x', margin.left + innerW / 2)
+    .attr('y', height - 10)
+    .attr('text-anchor', 'middle')
+    .attr('fill', 'white')
+    .text('Year');
+
+  svg.append('text')
+    .attr('class', 'axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('x', - (margin.top + innerH / 2))
+    .attr('y', 20)
+    .attr('text-anchor', 'middle')
+    .attr('fill', 'white')
+    .text(opts.yLabel || '');
+
+  container.appendChild(svg.node());
+}
+
+
+drawMultiLineChart(document.getElementById('chart13'), [{name: "Rock", data: collabArtistsRock}, {name: "Pop / Hip-Hop", data: collabArtistsOther}], { 
+  yLabel: '% of Artists Per Genre Group',
+  showPoints: true
+}, "Figure 13: Percentage of Artists Per Genre Group That Have Collaborated With Another Chart Topping Artist, per Year");
+
+drawMultiLineChart(document.getElementById('chart14'), [{name: "Rock", data: sharedArtistsRock}, {name: "Pop / Hip-Hop", data: sharedArtistsOther}], { 
+  yLabel: '% of Artists Per Genre Group',
+  showPoints: true
+}, "Figure 14: Percentage of Artists Per Genre Group That Have a Shared Member With Another Chart Topping Artist, per Year");
+
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
